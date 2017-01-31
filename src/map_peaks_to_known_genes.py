@@ -5,33 +5,37 @@ from optparse import OptionParser
 from intervaltree import Interval, IntervalTree
 
 
+usage = '%prog [options] <knownGene file> <peaks file>'
+description = """
+Map the peaks in <peaks file> to genes in <knownGene file>.  <knownGene file> is format is as 
+specified in http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql, though BED 
+format is also accepted. <peaks file> format is as produced by GPS, MACS or BED.  If *auto* is 
+chosen (default) file extension is examined for *.xls* for default MACS format, *.txt* for GPS, 
+or *.bed* for BED format.  
+"""
+parser = OptionParser(usage=usage,description=description,epilog='')#,formatter=MultiLineHelpFormatter())
+parser.add_option('--upstream-window',dest='upst_win',type='int',default=100000,help='window width in base pairs to consider promoter region [default: %default]')
+parser.add_option('--downstream-window',dest='dnst_win',type='int',default=0,help='window width in base pairs to consider downstream region [default: %default]')
+parser.add_option('--tss',dest='tss',action='store_true',default=False, help='calculate downstream window from transcription start site instead of transcription end site')
+parser.add_option('--map-output',dest='peak_output',default=None,help='filename to output mapped peaks to [default: stdout]')
+parser.add_option('--stats-output',dest='stats_output',default=sys.stderr,help='filename to output summary stats in conversion [default: stderr]')
+parser.add_option('--peaks-format',dest='peaks_fmt',default='auto',type='choice',choices=['auto','MACS','BED'],help='format of peaks input file [default: %default]')
+
+parser.add_option('--intergenic',dest='intergenic',action='store_true',help='write intergenic peaks to the gene file as well with None as gene ID')
+parser.add_option('--utilpath',default='../src/',dest='addpath',help='Destination of chipsequtil library')
+parser.add_option('--symbol-xref',dest='symbol_xref',default=None,help='Provide kgXref table file supplied to find a gene symbol and add as second column of output')
+
+
+
 if __name__ == '__main__':
-
 	
-	usage = '%prog [options] <knownGene file> <peaks file>'
-	description = """
-	Map the peaks in <peaks file> to genes in <knownGene file>.  <knownGene file> is format is as 
-	specified in http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql, though BED 
-	format is also accepted. <peaks file> format is as produced by GPS, MACS or BED.  If *auto* is 
-	chosen (default) file extension is examined for *.xls* for default MACS format, *.txt* for GPS, 
-	or *.bed* for BED format.  
-	"""
-	parser = OptionParser(usage=usage,description=description,epilog='')#,formatter=MultiLineHelpFormatter())
-	parser.add_option('--upstream-window',dest='upst_win',type='int',default=100000,help='window width in base pairs to consider promoter region [default: %default]')
-	parser.add_option('--downstream-window',dest='dnst_win',type='int',default=0,help='window width in base pairs to consider downstream region [default: %default]')
-	parser.add_option('--tss',dest='tss',action='store_true',default=False, help='calculate downstream window from transcription start site instead of transcription end site')
-	parser.add_option('--map-output',dest='peak_output',default=None,help='filename to output mapped peaks to [default: stdout]')
-	parser.add_option('--stats-output',dest='stats_output',default=sys.stderr,help='filename to output summary stats in conversion [default: stderr]')
-	parser.add_option('--peaks-format',dest='peaks_fmt',default='auto',type='choice',choices=['auto','MACS','BED'],help='format of peaks input file [default: %default]')
-
-	parser.add_option('--intergenic',dest='intergenic',action='store_true',help='write intergenic peaks to the gene file as well with None as gene ID')
-	parser.add_option('--utilpath',default='../src/',dest='addpath',help='Destination of chipsequtil library')
-	parser.add_option('--symbol-xref',dest='symbol_xref',default=None,help='Provide kgXref table file supplied to find a gene symbol and add as second column of output')
-	
+	opts, args = parser.parse_args(sys.argv[1:])
+	if len(args) != 2: parser.error('Must provide two filename arguments')
 
 	map_peaks_to_known_genes()
 
 
+######################################## File Parsing Logic #######################################
 
 
 def parse_known_genes_file(filepath):
@@ -60,6 +64,7 @@ def parse_known_genes_file(filepath):
 
 	known_genes_dataframe = pd.read_csv(filepath, delimiter='\t', names=known_genes_fieldnames, skipinitialspace=True)
 
+	return known_genes_dataframe
 
 
 def parse_peaks_file(filepath):
@@ -84,16 +89,22 @@ def parse_peaks_file(filepath):
 	blockSizes - A comma-separated list of the block sizes. The number of items in this list should correspond to blockCount.
 	blockStarts - A comma-separated list of block starts. All of the blockStart positions should be calculated relative to chromStart. The number of items in this list should correspond to blockCount.
 
-	MACS
-	GPS
 
 	"""
 	
+	# if peaks file format is bed
+
 	peaks_fieldnames = ["chrom","chromStart","chromEnd","name","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"]
 
 	peaks_dataframe = pd.read_csv(filepath, delimiter='\t', names=known_genes_fieldnames, skipinitialspace=True)
 
+	# if peaks file format is MACS
+	
 
+	# if peaks file format is GPS
+
+
+	return peaks_dataframe
 
 
 def parse_kgXref_file(filepath):
@@ -104,20 +115,20 @@ def parse_kgXref_file(filepath):
 
 	kgXref_dataframe = pd.read_csv(filepath, delimiter='\t', names=known_genes_fieldnames, skipinitialspace=True)
 
+	return kgXref_dataframe
 
 
 
-def map_peaks_to_known_genes(peaks_filename, known_genes_filename, etc...):
+############################################ App Logic ############################################
+
+
+def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, etc...):
 	"""
 	"""
 
-	opts, args = parser.parse_args(sys.argv[1:])
-	if len(args) != 2: parser.error('Must provide two filename arguments')
-
-
-	reference = parse_known_genes_file(args[0])
-	peaks = parse_peaks_file(args[1])
-	kgXref = parse_kgXref_file(args[2])
+	reference = parse_known_genes_file(known_genes_filepath)
+	peaks = parse_peaks_file(peaks_filepath)
+	kgXref = parse_kgXref_file(kgXref_filepath)
 
 	reference = group_by_chromosome(reference)
 	peaks = group_by_chromosome(peaks)
@@ -131,10 +142,14 @@ def map_peaks_to_known_genes(peaks_filename, known_genes_filename, etc...):
 
 
 
-def group_by_chromosome(list_of_ordereddict):
+def group_by_chromosome(dataframe):
 	"""
 	"""
 
+
+	g = dataframe.groupby('chrom')
+	
+	g.get_group('chr1')
 
 
 
