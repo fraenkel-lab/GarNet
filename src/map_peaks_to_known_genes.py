@@ -166,7 +166,7 @@ def IntervalTree_from_dataframe(dataframe):
 
 	intervals = zip(dataframe.chromStart.values, dataframe.chromEnd.values, dataframe.values.tolist())
 
-	tree = IntervalTree(intervals)
+	tree = IntervalTree.from_tuples(intervals)
 
 	return tree
 
@@ -184,8 +184,6 @@ peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A54
 
 peaks = group_by_chromosome(peaks)
 
-print(type(peaks))
-
-# tree = IntervalTree_from_dataframe(peaks.get('chr1'))
+tree = IntervalTree_from_dataframe(peaks.get('chr1'))
 
 
