@@ -1,8 +1,10 @@
+import sys
 
-import pandas as pd
 from optparse import OptionParser
 
-from intervaltree import Interval, IntervalTree
+import pandas as pd
+
+# from intervaltree import Interval, IntervalTree
 
 
 usage = '%prog [options] <knownGene file> <peaks file>'
@@ -13,26 +15,32 @@ format is also accepted. <peaks file> format is as produced by GPS, MACS or BED.
 chosen (default) file extension is examined for *.xls* for default MACS format, *.txt* for GPS, 
 or *.bed* for BED format.  
 """
-parser = OptionParser(usage=usage,description=description,epilog='')#,formatter=MultiLineHelpFormatter())
-parser.add_option('--upstream-window',dest='upst_win',type='int',default=100000,help='window width in base pairs to consider promoter region [default: %default]')
-parser.add_option('--downstream-window',dest='dnst_win',type='int',default=0,help='window width in base pairs to consider downstream region [default: %default]')
-parser.add_option('--tss',dest='tss',action='store_true',default=False, help='calculate downstream window from transcription start site instead of transcription end site')
-parser.add_option('--map-output',dest='peak_output',default=None,help='filename to output mapped peaks to [default: stdout]')
-parser.add_option('--stats-output',dest='stats_output',default=sys.stderr,help='filename to output summary stats in conversion [default: stderr]')
-parser.add_option('--peaks-format',dest='peaks_fmt',default='auto',type='choice',choices=['auto','MACS','BED'],help='format of peaks input file [default: %default]')
+parser = OptionParser(usage=usage, description=description, epilog='')#, formatter=MultiLineHelpFormatter())
 
-parser.add_option('--intergenic',dest='intergenic',action='store_true',help='write intergenic peaks to the gene file as well with None as gene ID')
-parser.add_option('--utilpath',default='../src/',dest='addpath',help='Destination of chipsequtil library')
-parser.add_option('--symbol-xref',dest='symbol_xref',default=None,help='Provide kgXref table file supplied to find a gene symbol and add as second column of output')
+parser.add_option('--upstream-window', dest='upst_win', type='int', default=100000, 
+	help='window width in base pairs to consider promoter region [default: %default]')
+parser.add_option('--downstream-window', dest='dnst_win', type='int', default=0, 
+	help='window width in base pairs to consider downstream region [default: %default]')
+parser.add_option('--tss', dest='tss', action='store_true', default=False,  
+	help='calculate downstream window from transcription start site instead of transcription end site')
+parser.add_option('--map-output', dest='peak_output', default=None, 
+	help='filename to output mapped peaks to [default: stdout]')
+parser.add_option('--stats-output', dest='stats_output', default=sys.stderr, 
+	help='filename to output summary stats in conversion [default: stderr]')
+
+parser.add_option('--intergenic', dest='intergenic', action='store_true', 
+	help='write intergenic peaks to the gene file as well with None as gene ID')
+parser.add_option('--symbol-xref', dest='symbol_xref', default=None, 
+	help='Provide kgXref table file supplied to find a gene symbol and add as second column of output')
 
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 	
-	opts, args = parser.parse_args(sys.argv[1:])
-	if len(args) != 2: parser.error('Must provide two filename arguments')
+# 	options, args = parser.parse_args(sys.argv[1:])
+# 	if len(args) != 2: parser.error('Must provide two filename arguments')
 
-	map_peaks_to_known_genes()
+# 	map_peaks_to_known_genes(args[0], args[1], options)
 
 
 ######################################## File Parsing Logic #######################################
@@ -122,53 +130,60 @@ def parse_kgXref_file(filepath):
 ############################################ App Logic ############################################
 
 
-def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, etc...):
+def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # kgXref_filepath
 	"""
 	"""
 
 	reference = parse_known_genes_file(known_genes_filepath)
 	peaks = parse_peaks_file(peaks_filepath)
-	kgXref = parse_kgXref_file(kgXref_filepath)
+	# kgXref = parse_kgXref_file(kgXref_filepath)
 
 	reference = group_by_chromosome(reference)
 	peaks = group_by_chromosome(peaks)
 
-	reference = {chrom: IntervalTree_from_dict(genes) for chrom, genes in reference}
+	peaks = {chrom: IntervalTree_from_dataframe(chrom_peaks) for chrom, chrom_peaks in peaks}
 
-	map = map_peaks_to_reference(peaks, reference)
+	map = map_peaks_to_reference(peaks, reference, options)
 
-	output(map)
+	# output(map)
 
 
 
 
 def group_by_chromosome(dataframe):
 	"""
+	Must be a dataframe with a chrom column
 	"""
 
-
-	g = dataframe.groupby('chrom')
-	
-	g.get_group('chr1')
+	return dict(list(dataframe.groupby('chrom')))
 
 
-
-def IntervalTree_from_dict(dictionary):
+def IntervalTree_from_dataframe(dataframe):
 	"""
+	The parameter is a dataframe
 	"""
 
+	[(row, row, row) for row in dataframe.values] # dataframe.values is a numpy ndarray
+
+	tree = IntervalTree()
+
+	# IntervalTree([for ])
 
 
-class Peaks():
-	"""
-	"""
-	def __init__(self, arg):
-		self.arg = arg
-		
+# something I could do would be to sort both lists, and then iterate them both, which should be fast 
 
 
+
+def map_peaks_to_reference(peaks, reference, options):
+	pass
 
 
 ########################################### Error Logic ###########################################
+
+
+
+reference = parse_known_genes_file("/Users/alex/Documents/OmicsIntegrator/data/ucsc_hg19_knownGenes.txt")
+
+reference = group_by_chromosome(reference)
 
 
