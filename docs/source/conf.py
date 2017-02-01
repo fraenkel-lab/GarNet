@@ -20,6 +20,9 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import os, sys
+sys.path.insert(0, os.path.abspath('../../src'))
+
 
 # -- General configuration ------------------------------------------------
 
@@ -41,7 +44,7 @@ templates_path = ['templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
+# source_suffix = ['.md', '.rst']
 source_suffix = '.rst'
 
 # The master toctree document.

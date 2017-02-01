@@ -105,7 +105,7 @@ def parse_peaks_file(filepath):
 
 	peaks_fieldnames = ["chrom","chromStart","chromEnd","name","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"]
 
-	peaks_dataframe = pd.read_csv(filepath, delimiter='\t', names=known_genes_fieldnames, skipinitialspace=True)
+	peaks_dataframe = pd.read_csv(filepath, delimiter='\t', names=peaks_fieldnames, skipinitialspace=True)
 
 	# if peaks file format is MACS
 
@@ -122,7 +122,7 @@ def parse_kgXref_file(filepath):
 
 	kgXref_fieldnames = ['kgID','mRNA','spID','spDisplayID','geneSymbol','refseq','protAcc','description']
 
-	kgXref_dataframe = pd.read_csv(filepath, delimiter='\t', names=known_genes_fieldnames, skipinitialspace=True)
+	kgXref_dataframe = pd.read_csv(filepath, delimiter='\t', names=kgXref_fieldnames, skipinitialspace=True)
 
 	return kgXref_dataframe
 
@@ -180,8 +180,12 @@ def map_peaks_to_reference(peaks, reference, options):
 
 
 
-reference = parse_known_genes_file("/Users/alex/Documents/OmicsIntegrator/data/ucsc_hg19_knownGenes.txt")
+peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A549_FOXA1_broadPeak.bed")
 
-reference = group_by_chromosome(reference)
+peaks = group_by_chromosome(peaks)
+
+print(type(peaks))
+
+# tree = IntervalTree_from_dataframe(peaks.get('chr1'))
 
 
