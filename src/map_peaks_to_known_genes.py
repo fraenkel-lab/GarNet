@@ -137,14 +137,33 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 	peaks = parse_peaks_file(peaks_filepath)
 	# kgXref = parse_kgXref_file(kgXref_filepath)
 
+	build_search_window_around_reference_gene_transcription_start_sites(reference, options)
+
 	reference = group_by_chromosome(reference)
 	peaks = group_by_chromosome(peaks)
 
-	peaks = {chrom: IntervalTree_from_dataframe(chrom_peaks) for chrom, chrom_peaks in peaks}
+	peaks = {chrom: IntervalTree_from_dataframe(chromosome_peaks) for chrom, chromosome_peaks in peaks}
+	reference = {chrom: IntervalTree_from_dataframe(gene_regions) for chrom, gene_regions in reference}
 
-	map = map_peaks_to_reference(peaks, reference, options)
+	peaks_with_associated_genes = map_peaks_to_reference(peaks, reference, options)
 
-	# output(map)
+	output(peaks_with_associated_genes, options)
+
+
+def build_search_window_around_reference_gene_transcription_start_sites(reference, options):
+	"""
+	parameters
+	----------
+		- reference is a dataframe
+		- options are options which shall be unpacked here
+	"""
+
+	upstream_window = options.upstream_window
+	downstream_window = options.downstream_window
+	tss = options.tss
+
+
+
 
 
 def group_by_chromosome(dataframe):
@@ -172,7 +191,7 @@ def map_peaks_to_reference(peaks, reference, options):
 	parameters
 	----------
 		- peaks is a dictionary of {chrom: IntervalTree}
-		- reference is a dict of {chrom: dataframe}
+		- reference is a dictionary of {chrom: IntervalTree}
 		- options are options which shall be unpacked here
 	"""
 
@@ -180,10 +199,27 @@ def map_peaks_to_reference(peaks, reference, options):
 	downstream_window = options.downstream_window
 	tss = options.tss
 
+	# so we have an upstream window and a downstream window.
+	# the peaks file has no notion of upstream or downstream
+
+	# so the question is really, given a TSS point in the known genes file
+	# you can construct a window, upstream and downstream
+	# and you want to ask, does a peak overlap with this at all.
 
 
+	# we want to know whether there's a gene upstream or downstream
 
 
+def output(peaks_with_associated_genes, options):
+	"""
+	parameters
+	----------
+		- options are options which shall be unpacked here
+
+	"""
+
+	peak_output = options.peak_output
+	stats_output = options.stats_output
 
 
 
