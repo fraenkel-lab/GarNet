@@ -1,10 +1,15 @@
+# Core python modules
 import sys
 
+# Peripheral python modules
 from optparse import OptionParser
+import pickle
 
+# Core python external libraries
 import numpy as np
 import pandas as pd
 
+# Peripheral python external libraries
 from intervaltree import Interval, IntervalTree
 
 
@@ -16,7 +21,7 @@ format is also accepted. <peaks file> format is as produced by GPS, MACS or BED.
 chosen (default) file extension is examined for *.xls* for default MACS format, *.txt* for GPS,
 or *.bed* for BED format.
 """
-parser = OptionParser(usage=usage, description=description, epilog='')#, formatter=MultiLineHelpFormatter())
+parser = OptionParser(usage=usage, description=description)
 
 parser.add_option('--upstream-window', dest='upstream_window', type='int', default=100000,
 	help='window width in base pairs to consider promoter region [default: %default]')
@@ -36,12 +41,17 @@ parser.add_option('--symbol-xref', dest='symbol_xref', default=None,
 
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
-# 	options, args = parser.parse_args(sys.argv[1:])
-# 	if len(args) != 2: parser.error('Must provide two filename arguments')
+	options, args = parser.parse_args(sys.argv[1:])
+	if len(args) != 2: parser.error('Must provide two filename arguments')
 
-# 	map_peaks_to_known_genes(args[0], args[1], options)
+	intervaltree = pickle.load(open(filepath, "rb"))
+
+	peaks_with_associated_genes = map_peaks_to_known_genes(args[0], args[1], options)
+
+	output(peaks_with_associated_genes, options)
+
 
 
 ######################################## File Parsing Logic #######################################
@@ -49,6 +59,8 @@ parser.add_option('--symbol-xref', dest='symbol_xref', default=None,
 
 def parse_known_genes_file(filepath):
 	"""
+	parameters
+	----------
 
 	The known genes file format is the following:
 	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
@@ -76,6 +88,9 @@ def parse_known_genes_file(filepath):
 
 def parse_peaks_file(filepath):
 	"""
+	parameters
+	----------
+
 	My contract is that I will return to you an instance of Peaks, independent of the filetype you supply me
 
 	BED:
@@ -116,6 +131,8 @@ def parse_peaks_file(filepath):
 
 def parse_kgXref_file(filepath):
 	"""
+	parameters
+	----------
 	"""
 
 	kgXref_fieldnames = ['kgID','mRNA','spID','spDisplayID','geneSymbol','refseq','protAcc','description']
@@ -123,6 +140,21 @@ def parse_kgXref_file(filepath):
 	kgXref_dataframe = pd.read_csv(filepath, delimiter='\t', names=kgXref_fieldnames, skipinitialspace=True)
 
 	return kgXref_dataframe
+
+
+def save_intervaltree(intervaltree, filepath): return pickle.dump(intervaltree, open(filepath, "wb"))
+
+
+def output(peaks_with_associated_genes, options):
+	"""
+	parameters
+	----------
+		- options are options which shall be unpacked here
+
+	"""
+
+	peak_output = options.peak_output
+	stats_output = options.stats_output
 
 
 
@@ -142,15 +174,39 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 	reference = group_by_chromosome(reference)
 	peaks = group_by_chromosome(peaks)
 
-	peaks = {chrom: IntervalTree_from_dataframe(chromosome_peaks) for chrom, chromosome_peaks in peaks}
-	reference = {chrom: IntervalTree_from_dataframe(gene_regions) for chrom, gene_regions in reference}
+	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
+	reference = {chrom: IntervalTree_from_reference(gene_regions, options) for chrom, gene_regions in reference}
 
 	peaks_with_associated_genes = map_peaks_to_reference(peaks, reference, options)
 
-	output(peaks_with_associated_genes, options)
+	return peaks_with_associated_genes
 
 
-def build_search_window_around_reference_gene_transcription_start_sites(reference, options):
+def group_by_chromosome(dataframe):
+	"""
+	parameters
+	----------
+	Must be a dataframe with a chrom column
+	"""
+
+	return dict(list(dataframe.groupby('chrom')))
+
+
+def IntervalTree_from_peaks(dataframe):
+	"""
+	parameters
+	----------
+	The parameter is a dataframe
+	"""
+
+	intervals = zip(dataframe.chromStart.values, dataframe.chromEnd.values, dataframe.values.tolist())
+
+	tree = IntervalTree.from_tuples(intervals)
+
+	return tree
+
+
+def IntervalTree_from_reference(reference, options):
 	"""
 	parameters
 	----------
@@ -158,28 +214,14 @@ def build_search_window_around_reference_gene_transcription_start_sites(referenc
 		- options are options which shall be unpacked here
 	"""
 
-	upstream_window = options.upstream_window
-	downstream_window = options.downstream_window
-	tss = options.tss
+	upstream_window = options['upstream_window']
+	downstream_window = options['downstream_window']
+	tss = options['tss'] # under some set of circumstances, using the tss flag means we should have different functionality here.
 
+	starts = reference.apply(lambda x: x.txStart - upstream_window if x.strand == '+' else x.txStart - downstream_window, axis=1)
+	ends = reference.apply(lambda x: x.txEnd + downstream_window if x.strand == '+' else x.txEnd + upstream_window, axis=1)
 
-
-
-
-def group_by_chromosome(dataframe):
-	"""
-	Must be a dataframe with a chrom column
-	"""
-
-	return dict(list(dataframe.groupby('chrom')))
-
-
-def IntervalTree_from_dataframe(dataframe):
-	"""
-	The parameter is a dataframe
-	"""
-
-	intervals = zip(dataframe.chromStart.values, dataframe.chromEnd.values, dataframe.values.tolist())
+	intervals = zip(starts.values, ends.values, reference.values.tolist())
 
 	tree = IntervalTree.from_tuples(intervals)
 
@@ -195,31 +237,12 @@ def map_peaks_to_reference(peaks, reference, options):
 		- options are options which shall be unpacked here
 	"""
 
-	upstream_window = options.upstream_window
-	downstream_window = options.downstream_window
-	tss = options.tss
+	for chrom in set(peaks.keys()).intersection( set(reference.keys()) ):
 
-	# so we have an upstream window and a downstream window.
-	# the peaks file has no notion of upstream or downstream
-
-	# so the question is really, given a TSS point in the known genes file
-	# you can construct a window, upstream and downstream
-	# and you want to ask, does a peak overlap with this at all.
+		intersection = peaks[chrom] & reference[chrom]
 
 
-	# we want to know whether there's a gene upstream or downstream
 
-
-def output(peaks_with_associated_genes, options):
-	"""
-	parameters
-	----------
-		- options are options which shall be unpacked here
-
-	"""
-
-	peak_output = options.peak_output
-	stats_output = options.stats_output
 
 
 
@@ -227,10 +250,14 @@ def output(peaks_with_associated_genes, options):
 
 
 
-peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A549_FOXA1_broadPeak.bed")
+# peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A549_FOXA1_broadPeak.bed")
 
-peaks = group_by_chromosome(peaks)
+# peaks = group_by_chromosome(peaks)
 
-tree = IntervalTree_from_dataframe(peaks.get('chr1'))
+# tree = IntervalTree_from_dataframe(peaks.get('chr1'))
+
+reference = parse_known_genes_file("/Users/alex/Documents/OmicsIntegrator/data/ucsc_hg19_knownGenes.txt")
+
+
 
 
