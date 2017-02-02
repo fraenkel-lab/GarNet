@@ -18,9 +18,9 @@ or *.bed* for BED format.
 """
 parser = OptionParser(usage=usage, description=description, epilog='')#, formatter=MultiLineHelpFormatter())
 
-parser.add_option('--upstream-window', dest='upst_win', type='int', default=100000,
+parser.add_option('--upstream-window', dest='upstream_window', type='int', default=100000,
 	help='window width in base pairs to consider promoter region [default: %default]')
-parser.add_option('--downstream-window', dest='dnst_win', type='int', default=0,
+parser.add_option('--downstream-window', dest='downstream_window', type='int', default=0,
 	help='window width in base pairs to consider downstream region [default: %default]')
 parser.add_option('--tss', dest='tss', action='store_true', default=False,
 	help='calculate downstream window from transcription start site instead of transcription end site')
@@ -49,8 +49,6 @@ parser.add_option('--symbol-xref', dest='symbol_xref', default=None,
 
 def parse_known_genes_file(filepath):
 	"""
-
-
 
 	The known genes file format is the following:
 	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
@@ -101,7 +99,7 @@ def parse_peaks_file(filepath):
 
 	"""
 
-	# if peaks file format is bed
+	# if peaks file format is BED
 
 	peaks_fieldnames = ["chrom","chromStart","chromEnd","name","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"]
 
@@ -131,7 +129,7 @@ def parse_kgXref_file(filepath):
 ############################################ App Logic ############################################
 
 
-def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # kgXref_filepath
+def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # kgXref_filepath too?
 	"""
 	"""
 
@@ -147,8 +145,6 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 	map = map_peaks_to_reference(peaks, reference, options)
 
 	# output(map)
-
-
 
 
 def group_by_chromosome(dataframe):
@@ -171,9 +167,24 @@ def IntervalTree_from_dataframe(dataframe):
 	return tree
 
 
-
 def map_peaks_to_reference(peaks, reference, options):
-	pass
+	"""
+	parameters
+	----------
+		- peaks is a dictionary of {chrom: IntervalTree}
+		- reference is a dict of {chrom: dataframe}
+		- options are options which shall be unpacked here
+	"""
+
+	upstream_window = options.upstream_window
+	downstream_window = options.downstream_window
+	tss = options.tss
+
+
+
+
+
+
 
 
 ########################################### Error Logic ###########################################
