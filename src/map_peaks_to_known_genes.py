@@ -243,18 +243,11 @@ def map_peaks_to_reference(peaks, reference, options):
 
 
 
-
-
-
 ########################################### Error Logic ###########################################
 
 
 
-# peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A549_FOXA1_broadPeak.bed")
-
-# peaks = group_by_chromosome(peaks)
-
-# tree = IntervalTree_from_dataframe(peaks.get('chr1'))
+peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A549_FOXA1_broadPeak.bed")
 
 reference = parse_known_genes_file("/Users/alex/Documents/OmicsIntegrator/data/ucsc_hg19_knownGenes.txt")
 
