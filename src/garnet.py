@@ -22,14 +22,15 @@ if all three are provided, we map known genes to peaks, and map motifs to peaks
 """
 parser = OptionParser(usage=usage, description=description)
 
-parser.add_option('--genes', dest='known_genes_filepath', type='str',
-	help='')
 parser.add_option('--peaks', dest='peaks_filepath', type='str',
+	help='')
+parser.add_option('--motifs', dest='motifs_filepath', type='str',
+	help='')
+parser.add_option('--genes', dest='known_genes_filepath', type='str',
 	help='')
 parser.add_option('--xref', dest='xref_filepath', type='str',
 	help='')
-parser.add_option('--motifs', dest='output_filepath', type='str',
-	help='')
+
 parser.add_option('--up', dest='upstream_window', type='int', default=100000,
 	help='window width in base pairs to consider promoter region [default: %default]')
 parser.add_option('--down', dest='downstream_window', type='int', default=0,
@@ -37,36 +38,33 @@ parser.add_option('--down', dest='downstream_window', type='int', default=0,
 parser.add_option('--tss', dest='tss', action='store_true', default=False,
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
+parser.add_option('--output', dest='output_filepath', type='str',
+	help='')
+
 
 if __name__ == '__main__':
 
 	options, args = parser.parse_args(sys.argv[1:])
 	# make sure some reasonable set of arguments is given. There should be no args
 
+	if options.get('peaks_filepath') and options.get('motifs_filepath') and options.get('known_genes_filepath'):
+		map_known_genes_to_peaks(options['peaks_filepath'], options['known_genes_filepath'], options)
+		map_motifs_to_peaks(options['peaks_filepath'], options['motifs_filepath'], options)
+		merge()
+
+	elif options.get('peaks_filepath') and options.get('known_genes_filepath'):
+		map_known_genes_to_peaks(options['peaks_filepath'], options['known_genes_filepath'], options)
+
+	elif options.get('peaks_filepath') and options.get('motifs_filepath'):
+		map_motifs_to_peaks(options['peaks_filepath'], options['motifs_filepath'], options)
+
+	elif options.get('known_genes_filepath') and options.get('motifs_filepath'):
+		map_motifs_to_known_genes(options['known_genes_filepath'], options['motifs_filepath'], options)
+
+	else: raise InvalidUsage("invalid usage")
 
 
-	# intervaltrees = load_pickled_object(filepath)
-
-	# peaks_with_associated_genes = map_peaks_to_known_genes(args[0], args[1], args[2], args[3], options)
-
-	output(peaks_with_associated_genes, options)
-
-
-
-
-def main():
-	pass
-
-
-
-	# if genes and peaks are provided, we map peaks to known genes
-
-	# if genes and motifs are provided, we map motifs to known genes
-
-	# if peaks and motifs are provided, we map motifs to peaks
-
-	# if all three are provided, we map known genes to peaks, and map motifs to peaks
-
+	output(result, output_filepath)
 
 
 
