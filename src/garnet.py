@@ -2,7 +2,7 @@
 import sys
 
 # Peripheral python modules
-from optparse import OptionParser
+import argparse
 import pickle
 
 # Core python external libraries
@@ -13,32 +13,30 @@ import pandas as pd
 from intervaltree import Interval, IntervalTree
 
 
-usage = '%prog [options]'
-description = """
-if genes and peaks are provided, we map peaks to known genes
-if genes and motifs are provided, we map motifs to known genes
-if peaks and motifs are provided, we map motifs to peaks
-if all three are provided, we map known genes to peaks, and map motifs to peaks
-"""
-parser = OptionParser(usage=usage, description=description)
+parser = argparse.ArgumentParser(description="""
+	if genes and peaks are provided, we map peaks to known genes
+	if genes and motifs are provided, we map motifs to known genes
+	if peaks and motifs are provided, we map motifs to peaks
+	if all three are provided, we map known genes to peaks, and map motifs to peaks
+""")
 
-parser.add_option('--peaks', dest='peaks_filepath', type='str',
+parser.add_argument('-p', '--peaks', dest='peaks_filepath', type=argparse.FileType('r'),
 	help='')
-parser.add_option('--motifs', dest='motifs_filepath', type='str',
+parser.add_argument('-m', '--motifs', dest='motifs_filepath', type=argparse.FileType('r'),
 	help='')
-parser.add_option('--genes', dest='known_genes_filepath', type='str',
+parser.add_argument('-g', '--genes', dest='known_genes_filepath', type=argparse.FileType('r'),
 	help='')
-parser.add_option('--xref', dest='xref_filepath', type='str',
+parser.add_argument('-x', '--xref', dest='xref_filepath', type=argparse.FileType('r'),
 	help='')
 
-parser.add_option('--up', dest='upstream_window', type='int', default=100000,
+parser.add_argument('--up', dest='upstream_window', type='int', default=100000,
 	help='window width in base pairs to consider promoter region [default: %default]')
-parser.add_option('--down', dest='downstream_window', type='int', default=0,
+parser.add_argument('--down', dest='downstream_window', type='int', default=0,
 	help='window width in base pairs to consider downstream region [default: %default]')
-parser.add_option('--tss', dest='tss', action='store_true', default=False,
+parser.add_argument('--tss', dest='tss', action='store_true', default=False,
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
-parser.add_option('--output', dest='output_filepath', type='str',
+parser.add_argument('-o', '--output', dest='output_filepath', type=argparse.FileType('w'),
 	help='')
 
 
@@ -47,24 +45,30 @@ if __name__ == '__main__':
 	options, args = parser.parse_args(sys.argv[1:])
 	# make sure some reasonable set of arguments is given. There should be no args
 
-	if options.get('peaks_filepath') and options.get('motifs_filepath') and options.get('known_genes_filepath'):
-		map_known_genes_to_peaks(options['peaks_filepath'], options['known_genes_filepath'], options)
-		map_motifs_to_peaks(options['peaks_filepath'], options['motifs_filepath'], options)
-		merge()
+	if options.peaks_filepath and options.motifs_filepath and options.known_genes_filepath:
+		unwritten_function(options.peaks_filepath, options.motifs_filepath, options.known_genes_filepath, options)
 
-	elif options.get('peaks_filepath') and options.get('known_genes_filepath'):
-		map_known_genes_to_peaks(options['peaks_filepath'], options['known_genes_filepath'], options)
+	elif options.peaks_filepath and options.known_genes_filepath:
+		map_known_genes_to_peaks(options.peaks_filepath, options.known_genes_filepath, options)
 
-	elif options.get('peaks_filepath') and options.get('motifs_filepath'):
-		map_motifs_to_peaks(options['peaks_filepath'], options['motifs_filepath'], options)
+	elif options.peaks_filepath and options.motifs_filepath:
+		map_motifs_to_peaks(options.peaks_filepath, options.motifs_filepath, options)
 
-	elif options.get('known_genes_filepath') and options.get('motifs_filepath'):
-		map_motifs_to_known_genes(options['known_genes_filepath'], options['motifs_filepath'], options)
+	elif options.known_genes_filepath and options.motifs_filepath:
+		map_motifs_to_known_genes(options.known_genes_filepath, options.motifs_filepath, options)
 
 	else: raise InvalidUsage("invalid usage")
 
 
 	output(result, output_filepath)
+
+
+	# what needs doing right now?
+	# essentially it needs testing
+
+	# the logic for the final function which does the full merge is needed.
+
+	# the logic for rebuilding the dataframe is needed, perhaps I should write that now.
 
 
 
@@ -178,6 +182,7 @@ def parse_motif_file(filepath):
 
 	motif_dataframe = pd.read_csv(filepath, delimiter='\t', names=motif_fieldnames, skipinitialspace=True)
 
+	motif_dataframe["name"] = motif_dataframe["name"].split('=', expand=True)
 	# split motif_dataframe.name around = and keep the second half.
 
 	return motif_dataframe
@@ -227,19 +232,18 @@ def map_known_genes_to_peaks(peaks_filepath, known_genes_filepath, options): # k
 	peaks = group_by_chromosome(peaks)
 
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
-	reference = {chrom: IntervalTree_from_reference(gene_regions, options) for chrom, gene_regions in reference}
+	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference}
 
 	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference, options)
 
 	return peaks_with_associated_genes
 
 
-
 def map_motifs_to_peaks(peaks_filepath, motifs_filepath, options):
 	"""
 	Arguments:
 		peaks_filepath (str): filepath for the peaks file.
-		known_genes_filepath (str): filepath for the known_genes file
+		motifs_filepath (str): filepath for the mnotifs file
 		options (dict): options which may come from the option parser.
 
 
@@ -255,24 +259,23 @@ def map_motifs_to_peaks(peaks_filepath, motifs_filepath, options):
 	peaks = group_by_chromosome(peaks)
 
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
-	motifs = {chrom: IntervalTree_from_motifs(gene_regions, options) for chrom, gene_regions in motifs}
+	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
 
 	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs, options)
 
 	return peaks_with_associated_genes
 
 
-
 def map_motifs_to_known_genes(known_genes_filepath, motifs_filepath, options):  # kgXref_filepath too?
 	"""
 	Arguments:
-		peaks_filepath (str): filepath for the peaks file.
 		known_genes_filepath (str): filepath for the known_genes file
+		motifs_filepath (str): filepath for the mnotifs file
 		options (dict): options which may come from the option parser.
 
 
 	Returns:
-		dict: dictionary of intervals in peaks to intervals in known genes.
+		dict: dictionary of intervals in known genes to intervals in motifs.
 	"""
 
 	reference = parse_known_genes_file(known_genes_filepath)
@@ -283,12 +286,11 @@ def map_motifs_to_known_genes(known_genes_filepath, motifs_filepath, options):  
 	motifs = group_by_chromosome(motifs)
 
 	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
-	reference = {chrom: IntervalTree_from_reference(gene_regions, options) for chrom, gene_regions in reference}
+	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference}
 
 	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference, options)
 
 	return peaks_with_associated_genes
-
 
 
 ######################################## Private Functions ########################################
@@ -385,9 +387,11 @@ def intersection_of_dict_of_intervaltree(A, B):
 
 
 
-peaks = parse_peaks_file("/Users/alex/Documents/OmicsIntegrator/example/a549/A549_FOXA1_broadPeak.bed")
+# peaks = parse_peaks_file("/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed")
 
-reference = parse_known_genes_file("/Users/alex/Documents/OmicsIntegrator/data/ucsc_hg19_knownGenes.txt")
+# reference = parse_known_genes_file("/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.txt")
+
+motifs = parse_motif_file("/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed")
 
 
 
