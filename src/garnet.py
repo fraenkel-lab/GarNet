@@ -165,7 +165,6 @@ def parse_kgXref_file(filepath):
 	return kgXref_dataframe
 
 
-
 def parse_motif_file(filepath):
 	"""
 	Arguments:
@@ -184,13 +183,12 @@ def parse_motif_file(filepath):
 	return motif_dataframe
 
 
-
 def save(object, filepath): return pickle.dump(object, open(filepath, "wb"))
 
 def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
 
 
-def output(peaks_with_associated_genes, options):
+def output(data, output_filepath):
 	"""
 	Arguments:
 		options (dict): a filepath might be in here?
@@ -200,15 +198,16 @@ def output(peaks_with_associated_genes, options):
 		None
 	"""
 
-	peak_output = options.peak_output
-	stats_output = options.stats_output
+	with open(output_filepath, 'wb') as output_file:
+		output_file('...')
+
 
 
 
 ######################################### Public Functions #########################################
 
 
-def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # kgXref_filepath too?
+def map_known_genes_to_peaks(peaks_filepath, known_genes_filepath, options): # kgXref_filepath too?
 	"""
 	Arguments:
 		peaks_filepath (str): filepath for the peaks file.
@@ -224,21 +223,19 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 	peaks = parse_peaks_file(peaks_filepath)
 	# kgXref = parse_kgXref_file(kgXref_filepath)
 
-	build_search_window_around_reference_gene_transcription_start_sites(reference, options)
-
 	reference = group_by_chromosome(reference)
 	peaks = group_by_chromosome(peaks)
 
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
 	reference = {chrom: IntervalTree_from_reference(gene_regions, options) for chrom, gene_regions in reference}
 
-	peaks_with_associated_genes = map_peaks_to_reference(peaks, reference, options)
+	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference, options)
 
 	return peaks_with_associated_genes
 
 
 
-def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
+def map_motifs_to_peaks(peaks_filepath, motifs_filepath, options):
 	"""
 	Arguments:
 		peaks_filepath (str): filepath for the peaks file.
@@ -250,7 +247,23 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
 		dict: dictionary of intervals in peaks to intervals in known genes.
 	"""
 
-def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
+
+	peaks = parse_peaks_file(peaks_filepath)
+	motifs = parse_motifs_file(motifs_filepath)
+
+	motifs = group_by_chromosome(motifs)
+	peaks = group_by_chromosome(peaks)
+
+	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
+	motifs = {chrom: IntervalTree_from_motifs(gene_regions, options) for chrom, gene_regions in motifs}
+
+	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs, options)
+
+	return peaks_with_associated_genes
+
+
+
+def map_motifs_to_known_genes(known_genes_filepath, motifs_filepath, options):  # kgXref_filepath too?
 	"""
 	Arguments:
 		peaks_filepath (str): filepath for the peaks file.
@@ -262,17 +275,21 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
 		dict: dictionary of intervals in peaks to intervals in known genes.
 	"""
 
-def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
-	"""
-	Arguments:
-		peaks_filepath (str): filepath for the peaks file.
-		known_genes_filepath (str): filepath for the known_genes file
-		options (dict): options which may come from the option parser.
+	reference = parse_known_genes_file(known_genes_filepath)
+	motifs = parse_motifs_file(motifs_filepath)
+	# kgXref = parse_kgXref_file(kgXref_filepath)
+
+	reference = group_by_chromosome(reference)
+	motifs = group_by_chromosome(motifs)
+
+	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
+	reference = {chrom: IntervalTree_from_reference(gene_regions, options) for chrom, gene_regions in reference}
+
+	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference, options)
+
+	return peaks_with_associated_genes
 
 
-	Returns:
-		dict: dictionary of intervals in peaks to intervals in known genes.
-	"""
 
 ######################################## Private Functions ########################################
 
@@ -343,55 +360,6 @@ def IntervalTree_from_motifs(motifs):
 	tree = IntervalTree.from_tuples(intervals)
 
 	return tree
-
-
-def map_peaks_to_reference(peaks, reference, options):
-	"""
-	Arguments:
-		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
-		reference (dict): is a dictionary of {chrom (str): IntervalTree}
-		options (dict): options which shall be unpacked here
-
-	Returns:
-		dataframe:
-	"""
-
-	peaks_and_associated_genes_per_chrom = intersection_of_dict_of_intervaltree(peaks, reference)
-
-	# do some computing about distance and get the data out of each of the intervals.
-
-	return peaks_and_associated_genes_per_chrom
-
-
-def map_motifs_to_peaks(peaks, reference, options):
-	"""
-	Arguments:
-		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
-		reference (dict): is a dictionary of {chrom (str): IntervalTree}
-		options (dict): options which shall be unpacked here
-
-	Returns:
-		dataframe:
-	"""
-
-	peaks_and_associated_genes_per_chrom = intersection_of_dict_of_intervaltree(peaks, reference)
-
-
-
-def map_motifs_to_reference(peaks, reference, options):
-	"""
-	Arguments:
-		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
-		reference (dict): is a dictionary of {chrom (str): IntervalTree}
-		options (dict): options which shall be unpacked here
-
-	Returns:
-		dataframe:
-	"""
-
-	peaks_and_associated_genes_per_chrom = intersection_of_dict_of_intervaltree(peaks, reference)
-
-
 
 
 def intersection_of_dict_of_intervaltree(A, B):
