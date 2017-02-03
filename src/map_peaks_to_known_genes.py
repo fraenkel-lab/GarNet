@@ -59,8 +59,8 @@ if __name__ == '__main__':
 
 def parse_known_genes_file(filepath):
 	"""
-	parameters
-	----------
+	Arguments:
+		filepath (str): obvious
 
 	The known genes file format is the following:
 	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
@@ -88,8 +88,8 @@ def parse_known_genes_file(filepath):
 
 def parse_peaks_file(filepath):
 	"""
-	parameters
-	----------
+	Arguments:
+		filepath (str): obvious
 
 	My contract is that I will return to you an instance of Peaks, independent of the filetype you supply me
 
@@ -131,8 +131,9 @@ def parse_peaks_file(filepath):
 
 def parse_kgXref_file(filepath):
 	"""
-	parameters
-	----------
+	Arguments:
+		filepath (str): obvious
+
 	"""
 
 	kgXref_fieldnames = ['kgID','mRNA','spID','spDisplayID','geneSymbol','refseq','protAcc','description']
@@ -147,9 +148,8 @@ def save_intervaltree(intervaltree, filepath): return pickle.dump(intervaltree, 
 
 def output(peaks_with_associated_genes, options):
 	"""
-	parameters
-	----------
-		- options are options which shall be unpacked here
+	Arguments:
+		options (dict): a filepath might be in here?
 
 	"""
 
@@ -163,6 +163,11 @@ def output(peaks_with_associated_genes, options):
 
 def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # kgXref_filepath too?
 	"""
+	Arguments:
+		peaks_filepath (str): filepath for the peaks file.
+		known_genes_filepath (str): filepath for the known_genes file
+		options (dict): options which may come from the option parser.
+
 	"""
 
 	reference = parse_known_genes_file(known_genes_filepath)
@@ -184,22 +189,20 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 
 def group_by_chromosome(dataframe):
 	"""
-	parameters
-	----------
-	Must be a dataframe with a chrom column
+	Arguments:
+		dataframe (dataframe): Must be a dataframe with a chrom column
 	"""
 
 	return dict(list(dataframe.groupby('chrom')))
 
 
-def IntervalTree_from_peaks(dataframe):
+def IntervalTree_from_peaks(peaks):
 	"""
-	parameters
-	----------
-	The parameter is a dataframe
+	Arguments:
+		peaks (dataframe): Must be a dataframe with chromStart and chromEnd columns
 	"""
 
-	intervals = zip(dataframe.chromStart.values, dataframe.chromEnd.values, dataframe.values.tolist())
+	intervals = zip(peaks.chromStart.values, peaks.chromEnd.values, peaks.values.tolist())
 
 	tree = IntervalTree.from_tuples(intervals)
 
@@ -208,10 +211,9 @@ def IntervalTree_from_peaks(dataframe):
 
 def IntervalTree_from_reference(reference, options):
 	"""
-	parameters
-	----------
-		- reference is a dataframe
-		- options are options which shall be unpacked here
+	Arguments:
+		reference (dataframe): Must be a dataframe with `strand`, `txStart`, and `txEnd` columns
+		options (dict): options which shall be unpacked here
 	"""
 
 	upstream_window = options['upstream_window']
@@ -230,16 +232,15 @@ def IntervalTree_from_reference(reference, options):
 
 def map_peaks_to_reference(peaks, reference, options):
 	"""
-	parameters
-	----------
-		- peaks is a dictionary of {chrom: IntervalTree}
-		- reference is a dictionary of {chrom: IntervalTree}
-		- options are options which shall be unpacked here
+	Arguments:
+		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
+		reference (dict): is a dictionary of {chrom (str): IntervalTree}
+		options (dict): options which shall be unpacked here
 	"""
 
 	for chrom in set(peaks.keys()).intersection( set(reference.keys()) ):
 
-		intersection = peaks[chrom] & reference[chrom]
+		intersection = sorted(interval for interval in tree2 if tree1.overlaps(interval))
 
 
 
