@@ -13,44 +13,60 @@ import pandas as pd
 from intervaltree import Interval, IntervalTree
 
 
-usage = '%prog [options] <knownGene file> <peaks file>'
+usage = '%prog [options]'
 description = """
-Map the peaks in <peaks file> to genes in <knownGene file>.  <knownGene file> is format is as
-specified in http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql, though BED
-format is also accepted. <peaks file> format is as produced by GPS, MACS or BED.  If *auto* is
-chosen (default) file extension is examined for *.xls* for default MACS format, *.txt* for GPS,
-or *.bed* for BED format.
+if genes and peaks are provided, we map peaks to known genes
+if genes and motifs are provided, we map motifs to known genes
+if peaks and motifs are provided, we map motifs to peaks
+if all three are provided, we map known genes to peaks, and map motifs to peaks
 """
 parser = OptionParser(usage=usage, description=description)
 
-parser.add_option('--upstream-window', dest='upstream_window', type='int', default=100000,
+parser.add_option('--genes', dest='known_genes_filepath', type='str',
+	help='')
+parser.add_option('--peaks', dest='peaks_filepath', type='str',
+	help='')
+parser.add_option('--xref', dest='xref_filepath', type='str',
+	help='')
+parser.add_option('--motifs', dest='output_filepath', type='str',
+	help='')
+parser.add_option('--up', dest='upstream_window', type='int', default=100000,
 	help='window width in base pairs to consider promoter region [default: %default]')
-parser.add_option('--downstream-window', dest='downstream_window', type='int', default=0,
+parser.add_option('--down', dest='downstream_window', type='int', default=0,
 	help='window width in base pairs to consider downstream region [default: %default]')
 parser.add_option('--tss', dest='tss', action='store_true', default=False,
 	help='calculate downstream window from transcription start site instead of transcription end site')
-parser.add_option('--map-output', dest='peak_output', default=None,
-	help='filename to output mapped peaks to [default: stdout]')
-parser.add_option('--stats-output', dest='stats_output', default=sys.stderr,
-	help='filename to output summary stats in conversion [default: stderr]')
-
-parser.add_option('--intergenic', dest='intergenic', action='store_true',
-	help='write intergenic peaks to the gene file as well with None as gene ID')
-parser.add_option('--symbol-xref', dest='symbol_xref', default=None,
-	help='Provide kgXref table file supplied to find a gene symbol and add as second column of output')
-
 
 
 if __name__ == '__main__':
 
 	options, args = parser.parse_args(sys.argv[1:])
-	if len(args) != 2: parser.error('Must provide two filename arguments')
+	# make sure some reasonable set of arguments is given. There should be no args
 
-	intervaltree = pickle.load(open(filepath, "rb"))
 
-	peaks_with_associated_genes = map_peaks_to_known_genes(args[0], args[1], options)
+
+	# intervaltrees = load_pickled_object(filepath)
+
+	# peaks_with_associated_genes = map_peaks_to_known_genes(args[0], args[1], args[2], args[3], options)
 
 	output(peaks_with_associated_genes, options)
+
+
+
+
+def main():
+	pass
+
+
+
+	# if genes and peaks are provided, we map peaks to known genes
+
+	# if genes and motifs are provided, we map motifs to known genes
+
+	# if peaks and motifs are provided, we map motifs to peaks
+
+	# if all three are provided, we map known genes to peaks, and map motifs to peaks
+
 
 
 
@@ -77,6 +93,9 @@ def parse_known_genes_file(filepath):
 	`exonEnds` longblob NOT NULL,
 	`proteinID` varchar(40) NOT NULL DEFAULT '',
 	`alignID` varchar(255) NOT NULL DEFAULT '',
+
+	Returns:
+		dataframe: representation of known genes file
 	"""
 
 	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
@@ -112,6 +131,9 @@ def parse_peaks_file(filepath):
 	blockStarts - A comma-separated list of block starts. All of the blockStart positions should be calculated relative to chromStart. The number of items in this list should correspond to blockCount.
 
 
+
+	Returns:
+		dataframe: representation of peaks file
 	"""
 
 	# if peaks file format is BED
@@ -134,6 +156,8 @@ def parse_kgXref_file(filepath):
 	Arguments:
 		filepath (str): obvious
 
+	Returns:
+		dataframe: representation of xref file
 	"""
 
 	kgXref_fieldnames = ['kgID','mRNA','spID','spDisplayID','geneSymbol','refseq','protAcc','description']
@@ -143,7 +167,29 @@ def parse_kgXref_file(filepath):
 	return kgXref_dataframe
 
 
-def save_intervaltree(intervaltree, filepath): return pickle.dump(intervaltree, open(filepath, "wb"))
+
+def parse_motif_file(filepath):
+	"""
+	Arguments:
+		filepath (str): obvious
+
+	Returns:
+		dataframe: representation of motif file
+	"""
+
+	motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
+
+	motif_dataframe = pd.read_csv(filepath, delimiter='\t', names=motif_fieldnames, skipinitialspace=True)
+
+	# split motif_dataframe.name around = and keep the second half.
+
+	return motif_dataframe
+
+
+
+def save(object, filepath): return pickle.dump(object, open(filepath, "wb"))
+
+def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
 
 
 def output(peaks_with_associated_genes, options):
@@ -151,6 +197,9 @@ def output(peaks_with_associated_genes, options):
 	Arguments:
 		options (dict): a filepath might be in here?
 
+
+	Returns:
+		None
 	"""
 
 	peak_output = options.peak_output
@@ -158,7 +207,7 @@ def output(peaks_with_associated_genes, options):
 
 
 
-############################################ App Logic ############################################
+######################################### Public Functions #########################################
 
 
 def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # kgXref_filepath too?
@@ -168,6 +217,9 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 		known_genes_filepath (str): filepath for the known_genes file
 		options (dict): options which may come from the option parser.
 
+
+	Returns:
+		dict: dictionary of intervals in peaks to intervals in known genes.
 	"""
 
 	reference = parse_known_genes_file(known_genes_filepath)
@@ -187,10 +239,53 @@ def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options): # k
 	return peaks_with_associated_genes
 
 
+
+def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
+	"""
+	Arguments:
+		peaks_filepath (str): filepath for the peaks file.
+		known_genes_filepath (str): filepath for the known_genes file
+		options (dict): options which may come from the option parser.
+
+
+	Returns:
+		dict: dictionary of intervals in peaks to intervals in known genes.
+	"""
+
+def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
+	"""
+	Arguments:
+		peaks_filepath (str): filepath for the peaks file.
+		known_genes_filepath (str): filepath for the known_genes file
+		options (dict): options which may come from the option parser.
+
+
+	Returns:
+		dict: dictionary of intervals in peaks to intervals in known genes.
+	"""
+
+def map_peaks_to_known_genes(peaks_filepath, known_genes_filepath, options):
+	"""
+	Arguments:
+		peaks_filepath (str): filepath for the peaks file.
+		known_genes_filepath (str): filepath for the known_genes file
+		options (dict): options which may come from the option parser.
+
+
+	Returns:
+		dict: dictionary of intervals in peaks to intervals in known genes.
+	"""
+
+######################################## Private Functions ########################################
+
+
 def group_by_chromosome(dataframe):
 	"""
 	Arguments:
 		dataframe (dataframe): Must be a dataframe with a chrom column
+
+	Returns:
+		dict: dictionary of chromosome names (e.g. 'chr1') to dataframes
 	"""
 
 	return dict(list(dataframe.groupby('chrom')))
@@ -200,6 +295,9 @@ def IntervalTree_from_peaks(peaks):
 	"""
 	Arguments:
 		peaks (dataframe): Must be a dataframe with chromStart and chromEnd columns
+
+	Returns:
+		IntervalTree: of peaks
 	"""
 
 	intervals = zip(peaks.chromStart.values, peaks.chromEnd.values, peaks.values.tolist())
@@ -214,6 +312,9 @@ def IntervalTree_from_reference(reference, options):
 	Arguments:
 		reference (dataframe): Must be a dataframe with `strand`, `txStart`, and `txEnd` columns
 		options (dict): options which shall be unpacked here
+
+	Returns:
+		IntervalTree: of genes from the reference
 	"""
 
 	upstream_window = options['upstream_window']
@@ -230,18 +331,88 @@ def IntervalTree_from_reference(reference, options):
 	return tree
 
 
+def IntervalTree_from_motifs(motifs):
+	"""
+	Arguments:
+		motifs (dataframe): Must be a dataframe with start and end columns
+
+	Returns:
+		IntervalTree: of motifs
+	"""
+
+	intervals = zip(motifs.start.values, motifs.end.values, motifs.values.tolist())
+
+	tree = IntervalTree.from_tuples(intervals)
+
+	return tree
+
+
 def map_peaks_to_reference(peaks, reference, options):
 	"""
 	Arguments:
 		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
 		reference (dict): is a dictionary of {chrom (str): IntervalTree}
 		options (dict): options which shall be unpacked here
+
+	Returns:
+		dataframe:
 	"""
 
-	for chrom in set(peaks.keys()).intersection( set(reference.keys()) ):
+	peaks_and_associated_genes_per_chrom = intersection_of_dict_of_intervaltree(peaks, reference)
 
-		intersection = sorted(interval for interval in tree2 if tree1.overlaps(interval))
+	# do some computing about distance and get the data out of each of the intervals.
 
+	return peaks_and_associated_genes_per_chrom
+
+
+def map_motifs_to_peaks(peaks, reference, options):
+	"""
+	Arguments:
+		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
+		reference (dict): is a dictionary of {chrom (str): IntervalTree}
+		options (dict): options which shall be unpacked here
+
+	Returns:
+		dataframe:
+	"""
+
+	peaks_and_associated_genes_per_chrom = intersection_of_dict_of_intervaltree(peaks, reference)
+
+
+
+def map_motifs_to_reference(peaks, reference, options):
+	"""
+	Arguments:
+		peaks (dict): is a dictionary of {chrom (str): IntervalTree}
+		reference (dict): is a dictionary of {chrom (str): IntervalTree}
+		options (dict): options which shall be unpacked here
+
+	Returns:
+		dataframe:
+	"""
+
+	peaks_and_associated_genes_per_chrom = intersection_of_dict_of_intervaltree(peaks, reference)
+
+
+
+
+def intersection_of_dict_of_intervaltree(A, B):
+	"""
+	Arguments:
+		A (dict): is a dictionary of {chrom (str): IntervalTree}
+		B (dict): is a dictionary of {chrom (str): IntervalTree}
+
+	Returns:
+		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }
+	"""
+
+	peaks_and_associated_genes = {}
+
+	for common_key in set(A.keys()).intersection( set(B.keys()) ):
+
+		intersection[common_key] = {a: B[common_key].search(a) for a in A[common_key]}
+
+	return intersection
 
 
 ########################################### Error Logic ###########################################
