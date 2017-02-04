@@ -64,30 +64,31 @@
 
 
 <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">	if genes and peaks are provided, we map peaks to known genes</span>
-<span class="s2">	if genes and motifs are provided, we map motifs to known genes</span>
-<span class="s2">	if peaks and motifs are provided, we map motifs to peaks</span>
-<span class="s2">	if all three are provided, we map known genes to peaks, and map motifs to peaks</span>
+<span class="s2">    Scans genome for nearby features within a given window size.</span>
+<span class="s2">    If genes and peaks are provided, we map peaks to nearby genes.</span>
+<span class="s2">	If genes and motif locations are provided, we map motifs to nearby genes.</span>
+<span class="s2">	If peaks and motif locations are provided, we map motifs to nearby peaks.</span>
+<span class="s2">    If all three are provided, we map genes to peaks, and map motifs to peaks.</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
 
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--peaks&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;peaks_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
-	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;BED file containing epigenetic regions of interest&#39;</span><span class="p">)</span> <span class="c1">#Add future file formats as we support them</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--motifs&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;motifs_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
-	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;BED file containing locations and scores of TF motifs&#39;</span><span class="p">)</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="s1">&#39;--genes&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;known_genes_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
-	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;file containing locations of known genes in the reference genome (i.e. from UCSC Annotation Database)&#39;</span><span class="p">)</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-x&#39;</span><span class="p">,</span> <span class="s1">&#39;--xref&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;xref_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
-	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;file containing information about known genes (i.e. from UCSC Annotation Database)&#39;</span><span class="p">)</span>
 
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--up&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;upstream_window&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
-	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;window width in base pairs to consider promoter region [default: </span><span class="si">%d</span><span class="s1">efault]&#39;</span><span class="p">)</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;window width in base pairs to consider upstream region [default: </span><span class="si">%d</span><span class="s1">efault]&#39;</span><span class="p">)</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--down&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;downstream_window&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
 	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;window width in base pairs to consider downstream region [default: </span><span class="si">%d</span><span class="s1">efault]&#39;</span><span class="p">)</span>
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--tss&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;tss&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
 	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;calculate downstream window from transcription start site instead of transcription end site&#39;</span><span class="p">)</span>
 
 <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;output_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">),</span>
-	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;output file name&#39;</span><span class="p">)</span>
 
 
 <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
