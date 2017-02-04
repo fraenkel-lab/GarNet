@@ -20,47 +20,46 @@ parser = argparse.ArgumentParser(description="""
 	if all three are provided, we map known genes to peaks, and map motifs to peaks
 """)
 
-parser.add_argument('-p', '--peaks', dest='peaks_filepath', type=argparse.FileType('r'),
-	help='')
-parser.add_argument('-m', '--motifs', dest='motifs_filepath', type=argparse.FileType('r'),
-	help='')
-parser.add_argument('-g', '--genes', dest='known_genes_filepath', type=argparse.FileType('r'),
-	help='')
-parser.add_argument('-x', '--xref', dest='xref_filepath', type=argparse.FileType('r'),
-	help='')
+parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
+	help='Filepath')
+parser.add_argument('-m', '--motifs', dest='motifs_file', type=argparse.FileType('r'),
+	help='Filepath')
+parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.FileType('r'),
+	help='Filepath')
+parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
+	help='Filepath')
 
-parser.add_argument('--up', dest='upstream_window', type='int', default=100000,
+parser.add_argument('--up', dest='upstream_window', type=int, default=100000,
 	help='window width in base pairs to consider promoter region [default: %default]')
-parser.add_argument('--down', dest='downstream_window', type='int', default=0,
+parser.add_argument('--down', dest='downstream_window', type=int, default=0,
 	help='window width in base pairs to consider downstream region [default: %default]')
-parser.add_argument('--tss', dest='tss', action='store_true', default=False,
+parser.add_argument('--tss', dest='tss', action='store_true',
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
-parser.add_argument('-o', '--output', dest='output_filepath', type=argparse.FileType('w'),
-	help='')
+parser.add_argument('-o', '--output', dest='output_file', type=argparse.FileType('w'),
+	help='Filepath')
 
 
 if __name__ == '__main__':
 
-	options, args = parser.parse_args(sys.argv[1:])
-	# make sure some reasonable set of arguments is given. There should be no args
+	args = parser.parse_args(sys.argv[1:])
 
-	if options.peaks_filepath and options.motifs_filepath and options.known_genes_filepath:
-		unwritten_function(options.peaks_filepath, options.motifs_filepath, options.known_genes_filepath, options)
+	if args.peaks_file and args.motifs_file and args.known_genes_file:
+		unwritten_function(args.peaks_file, args.motifs_file, args.known_genes_file, args)
 
-	elif options.peaks_filepath and options.known_genes_filepath:
-		map_known_genes_to_peaks(options.peaks_filepath, options.known_genes_filepath, options)
+	elif args.peaks_file and args.known_genes_file:
+		map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, args)
 
-	elif options.peaks_filepath and options.motifs_filepath:
-		map_motifs_to_peaks(options.peaks_filepath, options.motifs_filepath, options)
+	elif args.peaks_file and args.motifs_file:
+		map_motifs_to_peaks(args.peaks_file, args.motifs_file, args)
 
-	elif options.known_genes_filepath and options.motifs_filepath:
-		map_motifs_to_known_genes(options.known_genes_filepath, options.motifs_filepath, options)
+	elif args.known_genes_file and args.motifs_file:
+		map_motifs_to_known_genes(args.known_genes_file, args.motifs_file, args)
 
 	else: raise InvalidUsage("invalid usage")
 
-
-	output(result, output_filepath)
+	if args.ouput_file:
+		output(result, output_file)
 
 
 	# what needs doing right now?
@@ -75,10 +74,10 @@ if __name__ == '__main__':
 ######################################## File Parsing Logic #######################################
 
 
-def parse_known_genes_file(filepath):
+def parse_known_genes_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath (str): obvious
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
 	The known genes file format is the following:
 	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
@@ -102,15 +101,15 @@ def parse_known_genes_file(filepath):
 
 	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
 
-	known_genes_dataframe = pd.read_csv(filepath, delimiter='\t', names=known_genes_fieldnames, skipinitialspace=True)
+	known_genes_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=known_genes_fieldnames)
 
 	return known_genes_dataframe
 
 
-def parse_peaks_file(filepath):
+def parse_peaks_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath (str): obvious
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
 	My contract is that I will return to you an instance of Peaks, independent of the filetype you supply me
 
@@ -142,7 +141,7 @@ def parse_peaks_file(filepath):
 
 	peaks_fieldnames = ["chrom","chromStart","chromEnd","name","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"]
 
-	peaks_dataframe = pd.read_csv(filepath, delimiter='\t', names=peaks_fieldnames, skipinitialspace=True)
+	peaks_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=peaks_fieldnames)
 
 	# if peaks file format is MACS
 
@@ -153,10 +152,10 @@ def parse_peaks_file(filepath):
 	return peaks_dataframe
 
 
-def parse_kgXref_file(filepath):
+def parse_kgXref_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath (str): obvious
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
 	Returns:
 		dataframe: representation of xref file
@@ -164,15 +163,15 @@ def parse_kgXref_file(filepath):
 
 	kgXref_fieldnames = ['kgID','mRNA','spID','spDisplayID','geneSymbol','refseq','protAcc','description']
 
-	kgXref_dataframe = pd.read_csv(filepath, delimiter='\t', names=kgXref_fieldnames, skipinitialspace=True)
+	kgXref_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=kgXref_fieldnames)
 
 	return kgXref_dataframe
 
 
-def parse_motif_file(filepath):
+def parse_motif_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath (str): obvious
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
 	Returns:
 		dataframe: representation of motif file
@@ -180,7 +179,7 @@ def parse_motif_file(filepath):
 
 	motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
 
-	motif_dataframe = pd.read_csv(filepath, delimiter='\t', names=motif_fieldnames, skipinitialspace=True)
+	motif_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=motif_fieldnames)
 
 	motif_dataframe["name"] = motif_dataframe["name"].split('=', expand=True)
 	# split motif_dataframe.name around = and keep the second half.
@@ -193,7 +192,7 @@ def save(object, filepath): return pickle.dump(object, open(filepath, "wb"))
 def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
 
 
-def output(data, output_filepath):
+def output(data, output_file):
 	"""
 	Arguments:
 		options (dict): a filepath might be in here?
@@ -203,8 +202,7 @@ def output(data, output_filepath):
 		None
 	"""
 
-	with open(output_filepath, 'wb') as output_file:
-		output_file('...')
+	output_file.write('...')
 
 
 
