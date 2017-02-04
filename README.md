@@ -1,8 +1,10 @@
-GarNet 2.0
+## GarNet 2.0
 
 This repository is in progress. See the issues and projects page for details. -- Mandy and Alex
 
-Notes to ourselves:
+---
+
+#### Notes to ourselves:
 
 Alternative IntervalTree implementations:
 
