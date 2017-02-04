@@ -47,7 +47,7 @@ if __name__ == '__main__':
 	args = parser.parse_args(sys.argv[1:])
 
 	if args.peaks_file and args.motifs_file and args.known_genes_file:
-		unwritten_function(args.peaks_file, args.motifs_file, args.known_genes_file, args)
+		map_known_genes_and_TF_binding_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, args)
 
 	elif args.peaks_file and args.known_genes_file:
 		map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, args)
@@ -173,6 +173,7 @@ def parse_motif_file(filepath_or_file_object):
 	motif_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=motif_fieldnames)
 
 	motif_dataframe["name"] = motif_dataframe["name"].split('=', expand=True)
+
 	# split motif_dataframe.name around = and keep the second half.
 
 	return motif_dataframe
@@ -181,6 +182,8 @@ def parse_motif_file(filepath_or_file_object):
 def save(object, filepath): return pickle.dump(object, open(filepath, "wb"))
 
 def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
+
+def was_generated_by_pickle(filepath): return False
 
 
 def output(data, output_file):
@@ -197,7 +200,7 @@ def output(data, output_file):
 
 ######################################### Public Functions #########################################
 
-def unwritten_function(peaks_file, motifs_file, known_genes_file, options):
+def map_known_genes_and_TF_binding_motifs_to_peaks(peaks_file, motifs_file, known_genes_file, options):
 	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
@@ -212,9 +215,9 @@ def unwritten_function(peaks_file, motifs_file, known_genes_file, options):
 	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options)
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
 	# kgXref = parse_kgXref_file(kgXref_file)
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
+	motifs = dict_of_IntervalTree_from_motif_file(motifs_file)
 
-	peaks_with_associated_genes_and_motifs = some_other_intersection_function(peaks, reference, motifs, options)
+	peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs, options)
 
 	return peaks_with_associated_genes_and_motifs
 
@@ -290,6 +293,8 @@ def dict_of_IntervalTree_from_peak_file(peaks_file):
 		dict: dictionary of intervals in known genes to intervals in motifs.
 	"""
 
+	if was_generated_by_pickle(peaks_file): return load_pickled_object(peaks_file)
+
 	peaks = parse_peaks_file(peaks_file)
 	peaks = group_by_chromosome(peaks)
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
@@ -307,6 +312,8 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
 		dict: dictionary of intervals in known genes to intervals in motifs.
 	"""
 
+	if was_generated_by_pickle(known_genes_file): return load_pickled_object(known_genes_file)
+
 	reference = parse_known_genes_file(known_genes_file)
 	reference = group_by_chromosome(reference)
 	reference = {chrom: IntervalTree_from_peaks(genes, options) for chrom, genes in reference}
@@ -322,6 +329,8 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file):
 	Returns:
 		dict: dictionary of intervals in known genes to intervals in motifs.
 	"""
+
+	if was_generated_by_pickle(motifs_file): return load_pickled_object(motifs_file)
 
 	motifs = parse_motifs_file(motifs_file)
 	motifs = group_by_chromosome(motifs)
@@ -406,6 +415,26 @@ def IntervalTree_from_motifs(motifs):
 
 
 def intersection_of_dict_of_intervaltree(A, B):
+	"""
+	Arguments:
+		A (dict): is a dictionary of {chrom (str): IntervalTree}
+		B (dict): is a dictionary of {chrom (str): IntervalTree}
+
+	Returns:
+		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }
+	"""
+
+	intersection = {}
+
+	for common_key in set(A.keys()).intersection( set(B.keys()) ):
+
+		intersection[common_key] = {a.data: [b.data for b in B[common_key].search(a)] for a in A[common_key]}
+
+	return intersection
+
+
+
+def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 	"""
 	Arguments:
 		A (dict): is a dictionary of {chrom (str): IntervalTree}
