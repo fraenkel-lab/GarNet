@@ -71,10 +71,7 @@ if __name__ == '__main__':
 ######################################## File Parsing Logic #######################################
 
 def parse_known_genes_file(filepath_or_file_object):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
@@ -106,10 +103,7 @@ def parse_known_genes_file(filepath_or_file_object):
 
 
 def parse_peaks_file(filepath_or_file_object):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
@@ -154,10 +148,7 @@ def parse_peaks_file(filepath_or_file_object):
 
 
 def parse_kgXref_file(filepath_or_file_object):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
@@ -173,10 +164,7 @@ def parse_kgXref_file(filepath_or_file_object):
 
 
 def parse_motif_file(filepath_or_file_object):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
 
@@ -203,10 +191,7 @@ def was_generated_by_pickle(filepath): return False
 
 
 def output(data, output_file):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		options (dict): a filepath might be in here?
 
@@ -220,10 +205,7 @@ def output(data, output_file):
 ######################################### Public Functions #########################################
 
 def map_known_genes_and_TF_binding_motifs_to_peaks(peaks_file, motifs_file, known_genes_file, options):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
@@ -265,10 +247,7 @@ def map_known_genes_to_peaks(peaks_file, known_genes_file, options): # kgXref_fi
 
 
 def map_motifs_to_peaks(peaks_file, motifs_file, options):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		motifs_file (str or FILE): filepath or file object for the mnotifs file
@@ -310,10 +289,7 @@ def map_motifs_to_known_genes(known_genes_file, motifs_file, options):  # kgXref
 ######################################## Private Functions ########################################
 
 def dict_of_IntervalTree_from_peak_file(peaks_file):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the mnotifs file
 
@@ -331,10 +307,7 @@ def dict_of_IntervalTree_from_peak_file(peaks_file):
 
 
 def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		options (dict): options which may come from the argument parser.
@@ -353,10 +326,7 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
 
 
 def dict_of_IntervalTree_from_motifs_file(motifs_file):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		motifs_file (str or FILE): filepath or file object for the mnotifs file
 
@@ -374,10 +344,7 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file):
 
 
 def group_by_chromosome(dataframe):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		dataframe (dataframe): Must be a dataframe with a chrom column
 
@@ -389,10 +356,7 @@ def group_by_chromosome(dataframe):
 
 
 def IntervalTree_from_peaks(peaks):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		peaks (dataframe): Must be a dataframe with chromStart and chromEnd columns
 
@@ -408,10 +372,7 @@ def IntervalTree_from_peaks(peaks):
 
 
 def IntervalTree_from_reference(reference, options):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		reference (dataframe): Must be a dataframe with `strand`, `txStart`, and `txEnd` columns
 		options (dict): options which shall be unpacked here
@@ -442,10 +403,7 @@ def IntervalTree_from_reference(reference, options):
 
 
 def IntervalTree_from_motifs(motifs):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		motifs (dataframe): Must be a dataframe with start and end columns
 
@@ -461,10 +419,7 @@ def IntervalTree_from_motifs(motifs):
 
 
 def intersection_of_dict_of_intervaltree(A, B):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		A (dict): is a dictionary of {chrom (str): IntervalTree}
 		B (dict): is a dictionary of {chrom (str): IntervalTree}
@@ -484,10 +439,7 @@ def intersection_of_dict_of_intervaltree(A, B):
 
 
 def intersection_of_three_dicts_of_intervaltrees(A, B, C):
-	"""Summary line.
-
-    Extended description of function.
-
+	"""
 	Arguments:
 		A (dict): is a dictionary of {chrom (str): IntervalTree}
 		B (dict): is a dictionary of {chrom (str): IntervalTree}

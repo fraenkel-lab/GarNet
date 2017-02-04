@@ -8,7 +8,7 @@
     
     <title>garnet &#8212; GarNet 2.0 documentation</title>
     
-    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -26,22 +26,23 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-   
-  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
+    <link rel="search" title="Search" href="../search.html" /> 
   </head>
   <body role="document">
-  
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>GarNet 2.0 documentation</span></a></h1>
+        <h2 class="heading"><span>garnet</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+      </div>
+      <div class="content">
+        
+        
   <h1>Source code for garnet</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 
@@ -116,10 +117,7 @@
 <span class="c1">######################################## File Parsing Logic #######################################</span>
 
 <span class="k">def</span> <span class="nf">parse_known_genes_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;r&#39;)`)</span>
 
@@ -151,10 +149,7 @@
 
 
 <span class="k">def</span> <span class="nf">parse_peaks_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;rb&#39;)`)</span>
 
@@ -199,10 +194,7 @@
 
 
 <span class="k">def</span> <span class="nf">parse_kgXref_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;rb&#39;)`)</span>
 
@@ -218,10 +210,7 @@
 
 
 <span class="k">def</span> <span class="nf">parse_motif_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;rb&#39;)`)</span>
 
@@ -248,10 +237,7 @@
 
 
 <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		options (dict): a filepath might be in here?</span>
 
@@ -265,10 +251,7 @@
 <span class="c1">######################################### Public Functions #########################################</span>
 
 <div class="viewcode-block" id="map_known_genes_and_TF_binding_motifs_to_peaks"><a class="viewcode-back" href="../index.html#garnet.map_known_genes_and_TF_binding_motifs_to_peaks">[docs]</a><span class="k">def</span> <span class="nf">map_known_genes_and_TF_binding_motifs_to_peaks</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">motifs_file</span><span class="p">,</span> <span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		peaks_file (str or FILE): filepath or file object for the peaks file.</span>
 <span class="sd">		known_genes_file (str or FILE): filepath or file object for the known_genes file</span>
@@ -310,10 +293,7 @@
 
 
 <div class="viewcode-block" id="map_motifs_to_peaks"><a class="viewcode-back" href="../index.html#garnet.map_motifs_to_peaks">[docs]</a><span class="k">def</span> <span class="nf">map_motifs_to_peaks</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">motifs_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		peaks_file (str or FILE): filepath or file object for the peaks file.</span>
 <span class="sd">		motifs_file (str or FILE): filepath or file object for the mnotifs file</span>
@@ -355,10 +335,7 @@
 <span class="c1">######################################## Private Functions ########################################</span>
 
 <span class="k">def</span> <span class="nf">dict_of_IntervalTree_from_peak_file</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		peaks_file (str or FILE): filepath or file object for the mnotifs file</span>
 
@@ -376,10 +353,7 @@
 
 
 <span class="k">def</span> <span class="nf">dict_of_IntervalTree_from_reference_file</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		known_genes_file (str or FILE): filepath or file object for the known_genes file</span>
 <span class="sd">		options (dict): options which may come from the argument parser.</span>
@@ -398,10 +372,7 @@
 
 
 <span class="k">def</span> <span class="nf">dict_of_IntervalTree_from_motifs_file</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		motifs_file (str or FILE): filepath or file object for the mnotifs file</span>
 
@@ -419,10 +390,7 @@
 
 
 <span class="k">def</span> <span class="nf">group_by_chromosome</span><span class="p">(</span><span class="n">dataframe</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		dataframe (dataframe): Must be a dataframe with a chrom column</span>
 
@@ -434,10 +402,7 @@
 
 
 <span class="k">def</span> <span class="nf">IntervalTree_from_peaks</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		peaks (dataframe): Must be a dataframe with chromStart and chromEnd columns</span>
 
@@ -453,10 +418,7 @@
 
 
 <span class="k">def</span> <span class="nf">IntervalTree_from_reference</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		reference (dataframe): Must be a dataframe with `strand`, `txStart`, and `txEnd` columns</span>
 <span class="sd">		options (dict): options which shall be unpacked here</span>
@@ -487,10 +449,7 @@
 
 
 <span class="k">def</span> <span class="nf">IntervalTree_from_motifs</span><span class="p">(</span><span class="n">motifs</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		motifs (dataframe): Must be a dataframe with start and end columns</span>
 
@@ -506,10 +465,7 @@
 
 
 <span class="k">def</span> <span class="nf">intersection_of_dict_of_intervaltree</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		A (dict): is a dictionary of {chrom (str): IntervalTree}</span>
 <span class="sd">		B (dict): is a dictionary of {chrom (str): IntervalTree}</span>
@@ -529,10 +485,7 @@
 
 
 <span class="k">def</span> <span class="nf">intersection_of_three_dicts_of_intervaltrees</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;Summary line.</span>
-
-<span class="sd">    Extended description of function.</span>
-
+	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Arguments:</span>
 <span class="sd">		A (dict): is a dictionary of {chrom (str): IntervalTree}</span>
 <span class="sd">		B (dict): is a dictionary of {chrom (str): IntervalTree}</span>
@@ -565,44 +518,18 @@
 
 </pre></div>
 
-          </div>
-        </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../index.html">Documentation overview</a><ul>
-  <li><a href="index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2017, Alexander LeNail.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
-      
-    </div>
 
-    
-
-    
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Alexander LeNail.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2.
+    </div>
   </body>
 </html>
