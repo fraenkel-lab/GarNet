@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Core python modules
 import sys
 
@@ -21,7 +23,7 @@ parser = argparse.ArgumentParser(description="""
 """)
 
 parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
-	help='Filepath')
+	help='File')
 parser.add_argument('-m', '--motifs', dest='motifs_file', type=argparse.FileType('r'),
 	help='Filepath')
 parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.FileType('r'),
@@ -77,7 +79,7 @@ if __name__ == '__main__':
 def parse_known_genes_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	The known genes file format is the following:
 	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
@@ -209,40 +211,56 @@ def output(data, output_file):
 
 ######################################### Public Functions #########################################
 
-
-def map_known_genes_to_peaks(peaks_filepath, known_genes_filepath, options): # kgXref_filepath too?
+def unwritten_function(peaks_file, motifs_file, known_genes_file, options):
 	"""
 	Arguments:
-		peaks_filepath (str): filepath for the peaks file.
-		known_genes_filepath (str): filepath for the known_genes file
-		options (dict): options which may come from the option parser.
+		peaks_file (str or FILE): filepath or file object for the peaks file.
+		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		options (dict): options which may come from the argument parser.
+
+
+	Returns:
+		dict: dictionary of intervals in peaks to intervals in known genes and motifs.
+	"""
+
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options)
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
+	# kgXref = parse_kgXref_file(kgXref_file)
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
+
+	peaks_with_associated_genes_and_motifs = some_other_intersection_function(peaks, reference, motifs, options)
+
+	return peaks_with_associated_genes_and_motifs
+
+
+def map_known_genes_to_peaks(peaks_file, known_genes_file, options): # kgXref_file too?
+	"""
+	Arguments:
+		peaks_file (str or FILE): filepath or file object for the peaks file.
+		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		options (dict): options which may come from the argument parser.
 
 
 	Returns:
 		dict: dictionary of intervals in peaks to intervals in known genes.
 	"""
 
-	reference = parse_known_genes_file(known_genes_filepath)
-	peaks = parse_peaks_file(peaks_filepath)
-	# kgXref = parse_kgXref_file(kgXref_filepath)
-
-	reference = group_by_chromosome(reference)
-	peaks = group_by_chromosome(peaks)
-
-	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
-	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference}
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options)
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
+	# kgXref = parse_kgXref_file(kgXref_file)
 
 	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference, options)
 
 	return peaks_with_associated_genes
 
 
-def map_motifs_to_peaks(peaks_filepath, motifs_filepath, options):
+def map_motifs_to_peaks(peaks_file, motifs_file, options):
 	"""
 	Arguments:
-		peaks_filepath (str): filepath for the peaks file.
-		motifs_filepath (str): filepath for the mnotifs file
-		options (dict): options which may come from the option parser.
+		peaks_file (str or FILE): filepath or file object for the peaks file.
+		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		options (dict): options which may come from the argument parser.
 
 
 	Returns:
@@ -250,48 +268,64 @@ def map_motifs_to_peaks(peaks_filepath, motifs_filepath, options):
 	"""
 
 
-	peaks = parse_peaks_file(peaks_filepath)
-	motifs = parse_motifs_file(motifs_filepath)
-
-	motifs = group_by_chromosome(motifs)
-	peaks = group_by_chromosome(peaks)
-
-	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
-	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
 
 	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs, options)
 
 	return peaks_with_associated_genes
 
 
-def map_motifs_to_known_genes(known_genes_filepath, motifs_filepath, options):  # kgXref_filepath too?
+def map_motifs_to_known_genes(known_genes_file, motifs_file, options):  # kgXref_file too?
 	"""
 	Arguments:
-		known_genes_filepath (str): filepath for the known_genes file
-		motifs_filepath (str): filepath for the mnotifs file
-		options (dict): options which may come from the option parser.
+		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		options (dict): options which may come from the argument parser.
 
 
 	Returns:
 		dict: dictionary of intervals in known genes to intervals in motifs.
 	"""
 
-	reference = parse_known_genes_file(known_genes_filepath)
-	motifs = parse_motifs_file(motifs_filepath)
-	# kgXref = parse_kgXref_file(kgXref_filepath)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
+	# kgXref = parse_kgXref_file(kgXref_file)
 
-	reference = group_by_chromosome(reference)
-	motifs = group_by_chromosome(motifs)
+	genes_with_associated_motifs = intersection_of_dict_of_intervaltree(reference, motifs, options)
 
-	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
-	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference}
-
-	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference, options)
-
-	return peaks_with_associated_genes
+	return genes_with_associated_motifs
 
 
 ######################################## Private Functions ########################################
+
+
+def dict_of_IntervalTree_from_peak_file(peaks_file):
+
+	peaks = parse_peaks_file(peaks_file)
+	peaks = group_by_chromosome(peaks)
+	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
+
+	return peaks
+
+
+def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
+
+	reference = parse_known_genes_file(known_genes_file)
+	reference = group_by_chromosome(reference)
+	reference = {chrom: IntervalTree_from_peaks(genes, options) for chrom, genes in reference}
+
+	return peaks
+
+
+def dict_of_IntervalTree_from_motifs_file(motifs_file):
+
+	motifs = parse_motifs_file(motifs_file)
+	motifs = group_by_chromosome(motifs)
+	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
+
+	return motifs
+
 
 
 def group_by_chromosome(dataframe):
@@ -372,13 +406,15 @@ def intersection_of_dict_of_intervaltree(A, B):
 		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }
 	"""
 
-	peaks_and_associated_genes = {}
+	intersection = {}
 
 	for common_key in set(A.keys()).intersection( set(B.keys()) ):
 
-		intersection[common_key] = {a: B[common_key].search(a) for a in A[common_key]}
+		intersection[common_key] = {a.data: [b.data for b in B[common_key].search(a)] for a in A[common_key]}
 
 	return intersection
+
+
 
 
 ########################################### Error Logic ###########################################
@@ -389,7 +425,7 @@ def intersection_of_dict_of_intervaltree(A, B):
 
 # reference = parse_known_genes_file("/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.txt")
 
-motifs = parse_motif_file("/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed")
+# motifs = parse_motif_file("/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed")
 
 
 
