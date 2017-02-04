@@ -31,9 +31,9 @@ parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.File
 parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
 	help='Filepath')
 
-parser.add_argument('--up', dest='upstream_window', type=int, default=100000,
+parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
 	help='window width in base pairs to consider promoter region [default: %default]')
-parser.add_argument('--down', dest='downstream_window', type=int, default=0,
+parser.add_argument('--down', dest='downstream_window', type=int, default=2000,
 	help='window width in base pairs to consider downstream region [default: %default]')
 parser.add_argument('--tss', dest='tss', action='store_true',
 	help='calculate downstream window from transcription start site instead of transcription end site')
@@ -366,12 +366,19 @@ def IntervalTree_from_reference(reference, options):
 		IntervalTree: of genes from the reference
 	"""
 
-	upstream_window = options['upstream_window']
-	downstream_window = options['downstream_window']
-	tss = options['tss'] # under some set of circumstances, using the tss flag means we should have different functionality here.
+	upstream_window = options.upstream_window
+	downstream_window = options.downstream_window
+	window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site = options.tss
 
-	starts = reference.apply(lambda x: x.txStart - upstream_window if x.strand == '+' else x.txStart - downstream_window, axis=1)
-	ends = reference.apply(lambda x: x.txEnd + downstream_window if x.strand == '+' else x.txEnd + upstream_window, axis=1)
+
+	if window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site:
+		starts = reference.apply(lambda x: x.txStart - upstream_window if x.strand == '+' else x.txEnd - upstream_window, axis=1)
+		ends = reference.apply(lambda x: x.txStart + downstream_window if x.strand == '+' else x.txEnd + downstream_window, axis=1)
+
+	else:
+		starts = reference.apply(lambda x: x.txStart - upstream_window, axis=1)
+		ends = reference.apply(lambda x: x.txEnd + downstream_window, axis=1)
+
 
 	intervals = zip(starts.values, ends.values, reference.values.tolist())
 
