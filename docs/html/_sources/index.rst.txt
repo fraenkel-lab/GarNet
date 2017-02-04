@@ -7,8 +7,8 @@ Welcome to GarNet's documentation!
 
 
 
-.. automodule:: map_peaks_to_known_genes
-
+.. automodule:: garnet
+	:members:
 
 
 

@@ -1,0 +1,607 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>garnet &#8212; GarNet 2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for garnet</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+
+<span class="c1"># Core python modules</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># Peripheral python modules</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="c1"># Core python external libraries</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="c1"># Peripheral python external libraries</span>
+<span class="kn">from</span> <span class="nn">intervaltree</span> <span class="k">import</span> <span class="n">Interval</span><span class="p">,</span> <span class="n">IntervalTree</span>
+
+<span class="c1"># list of public methods:</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;map_known_genes_and_TF_binding_motifs_to_peaks&quot;</span><span class="p">,</span> <span class="s2">&quot;map_known_genes_to_peaks&quot;</span><span class="p">,</span> <span class="s2">&quot;map_motifs_to_peaks&quot;</span><span class="p">,</span> <span class="s2">&quot;map_motifs_to_known_genes&quot;</span><span class="p">]</span>
+
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">	if genes and peaks are provided, we map peaks to known genes</span>
+<span class="s2">	if genes and motifs are provided, we map motifs to known genes</span>
+<span class="s2">	if peaks and motifs are provided, we map motifs to peaks</span>
+<span class="s2">	if all three are provided, we map known genes to peaks, and map motifs to peaks</span>
+<span class="s2">&quot;&quot;&quot;</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--peaks&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;peaks_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--motifs&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;motifs_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-g&#39;</span><span class="p">,</span> <span class="s1">&#39;--genes&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;known_genes_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-x&#39;</span><span class="p">,</span> <span class="s1">&#39;--xref&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;xref_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">),</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--up&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;upstream_window&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;window width in base pairs to consider promoter region [default: </span><span class="si">%d</span><span class="s1">efault]&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--down&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;downstream_window&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;window width in base pairs to consider downstream region [default: </span><span class="si">%d</span><span class="s1">efault]&#39;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--tss&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;tss&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;calculate downstream window from transcription start site instead of transcription end site&#39;</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;output_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">FileType</span><span class="p">(</span><span class="s1">&#39;w&#39;</span><span class="p">),</span>
+	<span class="n">help</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+	<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+	<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">peaks_file</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">motifs_file</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">known_genes_file</span><span class="p">:</span>
+		<span class="n">map_known_genes_and_TF_binding_motifs_to_peaks</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">motifs_file</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+	<span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">peaks_file</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">known_genes_file</span><span class="p">:</span>
+		<span class="n">map_known_genes_to_peaks</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+	<span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">peaks_file</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">motifs_file</span><span class="p">:</span>
+		<span class="n">map_motifs_to_peaks</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">motifs_file</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+	<span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">known_genes_file</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">motifs_file</span><span class="p">:</span>
+		<span class="n">map_motifs_to_known_genes</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">motifs_file</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+
+	<span class="k">else</span><span class="p">:</span> <span class="k">raise</span> <span class="n">InvalidUsage</span><span class="p">(</span><span class="s2">&quot;invalid usage&quot;</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ouput_file</span><span class="p">:</span>
+		<span class="n">output</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span>
+
+
+<span class="c1">######################################## File Parsing Logic #######################################</span>
+
+<span class="k">def</span> <span class="nf">parse_known_genes_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;r&#39;)`)</span>
+
+<span class="sd">	The known genes file format is the following:</span>
+<span class="sd">	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql</span>
+
+<span class="sd">	`name` varchar(255) NOT NULL DEFAULT &#39;&#39;,</span>
+<span class="sd">	`chrom` varchar(255) NOT NULL DEFAULT &#39;&#39;,</span>
+<span class="sd">	`strand` char(1) NOT NULL DEFAULT &#39;&#39;,</span>
+<span class="sd">	`txStart` int(10) unsigned NOT NULL DEFAULT &#39;0&#39;,</span>
+<span class="sd">	`txEnd` int(10) unsigned NOT NULL DEFAULT &#39;0&#39;,</span>
+<span class="sd">	`cdsStart` int(10) unsigned NOT NULL DEFAULT &#39;0&#39;,</span>
+<span class="sd">	`cdsEnd` int(10) unsigned NOT NULL DEFAULT &#39;0&#39;,</span>
+<span class="sd">	`exonCount` int(10) unsigned NOT NULL DEFAULT &#39;0&#39;,</span>
+<span class="sd">	`exonStarts` longblob NOT NULL,</span>
+<span class="sd">	`exonEnds` longblob NOT NULL,</span>
+<span class="sd">	`proteinID` varchar(40) NOT NULL DEFAULT &#39;&#39;,</span>
+<span class="sd">	`alignID` varchar(255) NOT NULL DEFAULT &#39;&#39;,</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dataframe: representation of known genes file</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">known_genes_fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="s2">&quot;chrom&quot;</span><span class="p">,</span><span class="s2">&quot;strand&quot;</span><span class="p">,</span><span class="s2">&quot;txStart&quot;</span><span class="p">,</span><span class="s2">&quot;txEnd&quot;</span><span class="p">,</span><span class="s2">&quot;cdsStart&quot;</span><span class="p">,</span><span class="s2">&quot;cdsEnd&quot;</span><span class="p">,</span><span class="s2">&quot;exonCount&quot;</span><span class="p">,</span><span class="s2">&quot;exonStarts&quot;</span><span class="p">,</span><span class="s2">&quot;exonEnds&quot;</span><span class="p">,</span><span class="s2">&quot;proteinID&quot;</span><span class="p">,</span><span class="s2">&quot;alignID&quot;</span><span class="p">]</span>
+
+	<span class="n">known_genes_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">known_genes_fieldnames</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">known_genes_dataframe</span>
+
+
+<span class="k">def</span> <span class="nf">parse_peaks_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;rb&#39;)`)</span>
+
+<span class="sd">	My contract is that I will return to you an instance of Peaks, independent of the filetype you supply me</span>
+
+<span class="sd">	BED:</span>
+
+<span class="sd">	chrom - The name of the chromosome (e.g. chr3, chrY, chr2_random) or scaffold (e.g. scaffold10671).</span>
+<span class="sd">	chromStart - The starting position of the feature in the chromosome or scaffold. The first base in a chromosome is numbered 0.</span>
+<span class="sd">	chromEnd - The ending position of the feature in the chromosome or scaffold. The chromEnd base is not included in the display of the feature. For example, the first 100 bases of a chromosome are defined as chromStart=0, chromEnd=100, and span the bases numbered 0-99.</span>
+
+<span class="sd">	The 9 additional optional BED fields are:</span>
+
+<span class="sd">	name - Defines the name of the BED line. This label is displayed to the left of the BED line in the Genome Browser window when the track is open to full display mode or directly to the left of the item in pack mode.</span>
+<span class="sd">	score - A score between 0 and 1000. If the track line useScore attribute is set to 1 for this annotation data set, the score value will determine the level of gray in which this feature is displayed (higher numbers = darker gray). This table shows the Genome Browser&#39;s translation of BED score values into shades of gray:</span>
+<span class="sd">	strand - Defines the strand. Either &quot;.&quot; (=no strand) or &quot;+&quot; or &quot;-&quot;.</span>
+<span class="sd">	thickStart - The starting position at which the feature is drawn thickly (for example, the start codon in gene displays). When there is no thick part, thickStart and thickEnd are usually set to the chromStart position.</span>
+<span class="sd">	thickEnd - The ending position at which the feature is drawn thickly (for example, the stop codon in gene displays).</span>
+<span class="sd">	itemRgb - An RGB value of the form R,G,B (e.g. 255,0,0). If the track line itemRgb attribute is set to &quot;On&quot;, this RBG value will determine the display color of the data contained in this BED line. NOTE: It is recommended that a simple color scheme (eight colors or less) be used with this attribute to avoid overwhelming the color resources of the Genome Browser and your Internet browser.</span>
+<span class="sd">	blockCount - The number of blocks (exons) in the BED line.</span>
+<span class="sd">	blockSizes - A comma-separated list of the block sizes. The number of items in this list should correspond to blockCount.</span>
+<span class="sd">	blockStarts - A comma-separated list of block starts. All of the blockStart positions should be calculated relative to chromStart. The number of items in this list should correspond to blockCount.</span>
+
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dataframe: representation of peaks file</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="c1"># if peaks file format is BED</span>
+
+	<span class="n">peaks_fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chrom&quot;</span><span class="p">,</span><span class="s2">&quot;chromStart&quot;</span><span class="p">,</span><span class="s2">&quot;chromEnd&quot;</span><span class="p">,</span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="s2">&quot;score&quot;</span><span class="p">,</span><span class="s2">&quot;strand&quot;</span><span class="p">,</span><span class="s2">&quot;thickStart&quot;</span><span class="p">,</span><span class="s2">&quot;thickEnd&quot;</span><span class="p">,</span><span class="s2">&quot;itemRgb&quot;</span><span class="p">,</span><span class="s2">&quot;blockCount&quot;</span><span class="p">,</span><span class="s2">&quot;blockSizes&quot;</span><span class="p">,</span><span class="s2">&quot;blockStarts&quot;</span><span class="p">]</span>
+
+	<span class="n">peaks_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">peaks_fieldnames</span><span class="p">)</span>
+
+	<span class="c1"># if peaks file format is MACS</span>
+
+
+	<span class="c1"># if peaks file format is GPS</span>
+
+
+	<span class="k">return</span> <span class="n">peaks_dataframe</span>
+
+
+<span class="k">def</span> <span class="nf">parse_kgXref_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;rb&#39;)`)</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dataframe: representation of xref file</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">kgXref_fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;kgID&#39;</span><span class="p">,</span><span class="s1">&#39;mRNA&#39;</span><span class="p">,</span><span class="s1">&#39;spID&#39;</span><span class="p">,</span><span class="s1">&#39;spDisplayID&#39;</span><span class="p">,</span><span class="s1">&#39;geneSymbol&#39;</span><span class="p">,</span><span class="s1">&#39;refseq&#39;</span><span class="p">,</span><span class="s1">&#39;protAcc&#39;</span><span class="p">,</span><span class="s1">&#39;description&#39;</span><span class="p">]</span>
+
+	<span class="n">kgXref_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">kgXref_fieldnames</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">kgXref_dataframe</span>
+
+
+<span class="k">def</span> <span class="nf">parse_motif_file</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, &#39;rb&#39;)`)</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dataframe: representation of motif file</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">motif_fieldnames</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;chrom&quot;</span><span class="p">,</span> <span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;score&quot;</span><span class="p">,</span> <span class="s2">&quot;strand&quot;</span><span class="p">]</span>
+
+	<span class="n">motif_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filepath_or_file_object</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">motif_fieldnames</span><span class="p">)</span>
+
+	<span class="n">motif_dataframe</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">motif_dataframe</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+	<span class="c1"># split motif_dataframe.name around = and keep the second half.</span>
+
+	<span class="k">return</span> <span class="n">motif_dataframe</span>
+
+
+<span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span> <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">load_pickled_object</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span> <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">was_generated_by_pickle</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span> <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		options (dict): a filepath might be in here?</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		None</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">output_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;...&#39;</span><span class="p">)</span>
+
+
+<span class="c1">######################################### Public Functions #########################################</span>
+
+<div class="viewcode-block" id="map_known_genes_and_TF_binding_motifs_to_peaks"><a class="viewcode-back" href="../index.html#garnet.map_known_genes_and_TF_binding_motifs_to_peaks">[docs]</a><span class="k">def</span> <span class="nf">map_known_genes_and_TF_binding_motifs_to_peaks</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">motifs_file</span><span class="p">,</span> <span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		peaks_file (str or FILE): filepath or file object for the peaks file.</span>
+<span class="sd">		known_genes_file (str or FILE): filepath or file object for the known_genes file</span>
+<span class="sd">		motifs_file (str or FILE): filepath or file object for the mnotifs file</span>
+<span class="sd">		options (dict): options which may come from the argument parser.</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in peaks to intervals in known genes and motifs.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">reference</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_reference_file</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+	<span class="n">peaks</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_peak_file</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">)</span>
+	<span class="c1"># kgXref = parse_kgXref_file(kgXref_file)</span>
+	<span class="n">motifs</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_motif_file</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">)</span>
+
+	<span class="n">peaks_with_associated_genes_and_motifs</span> <span class="o">=</span> <span class="n">intersection_of_three_dicts_of_intervaltrees</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">motifs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">peaks_with_associated_genes_and_motifs</span></div>
+
+
+<div class="viewcode-block" id="map_known_genes_to_peaks"><a class="viewcode-back" href="../index.html#garnet.map_known_genes_to_peaks">[docs]</a><span class="k">def</span> <span class="nf">map_known_genes_to_peaks</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span> <span class="c1"># kgXref_file too?</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Arguments:</span>
+<span class="sd">		peaks_file (str or FILE): filepath or file object for the peaks file.</span>
+<span class="sd">		known_genes_file (str or FILE): filepath or file object for the known_genes file</span>
+<span class="sd">		options (dict): options which may come from the argument parser.</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in peaks to intervals in known genes.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">reference</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_reference_file</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+	<span class="n">peaks</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_peak_file</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">)</span>
+	<span class="c1"># kgXref = parse_kgXref_file(kgXref_file)</span>
+
+	<span class="n">peaks_with_associated_genes</span> <span class="o">=</span> <span class="n">intersection_of_dict_of_intervaltree</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">reference</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">peaks_with_associated_genes</span></div>
+
+
+<div class="viewcode-block" id="map_motifs_to_peaks"><a class="viewcode-back" href="../index.html#garnet.map_motifs_to_peaks">[docs]</a><span class="k">def</span> <span class="nf">map_motifs_to_peaks</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">,</span> <span class="n">motifs_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		peaks_file (str or FILE): filepath or file object for the peaks file.</span>
+<span class="sd">		motifs_file (str or FILE): filepath or file object for the mnotifs file</span>
+<span class="sd">		options (dict): options which may come from the argument parser.</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in peaks to intervals in known genes.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+
+	<span class="n">peaks</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_peak_file</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">)</span>
+	<span class="n">motifs</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_motifs_file</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">)</span>
+
+	<span class="n">peaks_with_associated_motifs</span> <span class="o">=</span> <span class="n">intersection_of_dict_of_intervaltree</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">motifs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">peaks_with_associated_genes</span></div>
+
+
+<div class="viewcode-block" id="map_motifs_to_known_genes"><a class="viewcode-back" href="../index.html#garnet.map_motifs_to_known_genes">[docs]</a><span class="k">def</span> <span class="nf">map_motifs_to_known_genes</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">motifs_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>  <span class="c1"># kgXref_file too?</span>
+	<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">	Arguments:</span>
+<span class="sd">		known_genes_file (str or FILE): filepath or file object for the known_genes file</span>
+<span class="sd">		motifs_file (str or FILE): filepath or file object for the mnotifs file</span>
+<span class="sd">		options (dict): options which may come from the argument parser.</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in known genes to intervals in motifs.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">reference</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_reference_file</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+	<span class="n">motifs</span> <span class="o">=</span> <span class="n">dict_of_IntervalTree_from_motifs_file</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">)</span>
+	<span class="c1"># kgXref = parse_kgXref_file(kgXref_file)</span>
+
+	<span class="n">genes_with_associated_motifs</span> <span class="o">=</span> <span class="n">intersection_of_dict_of_intervaltree</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">motifs</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">genes_with_associated_motifs</span></div>
+
+
+<span class="c1">######################################## Private Functions ########################################</span>
+
+<span class="k">def</span> <span class="nf">dict_of_IntervalTree_from_peak_file</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		peaks_file (str or FILE): filepath or file object for the mnotifs file</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in known genes to intervals in motifs.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">if</span> <span class="n">was_generated_by_pickle</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">):</span> <span class="k">return</span> <span class="n">load_pickled_object</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">)</span>
+
+	<span class="n">peaks</span> <span class="o">=</span> <span class="n">parse_peaks_file</span><span class="p">(</span><span class="n">peaks_file</span><span class="p">)</span>
+	<span class="n">peaks</span> <span class="o">=</span> <span class="n">group_by_chromosome</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
+	<span class="n">peaks</span> <span class="o">=</span> <span class="p">{</span><span class="n">chrom</span><span class="p">:</span> <span class="n">IntervalTree_from_peaks</span><span class="p">(</span><span class="n">chromosome_peaks</span><span class="p">)</span> <span class="k">for</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">chromosome_peaks</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">}</span>
+
+	<span class="k">return</span> <span class="n">peaks</span>
+
+
+<span class="k">def</span> <span class="nf">dict_of_IntervalTree_from_reference_file</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		known_genes_file (str or FILE): filepath or file object for the known_genes file</span>
+<span class="sd">		options (dict): options which may come from the argument parser.</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in known genes to intervals in motifs.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">if</span> <span class="n">was_generated_by_pickle</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">):</span> <span class="k">return</span> <span class="n">load_pickled_object</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">)</span>
+
+	<span class="n">reference</span> <span class="o">=</span> <span class="n">parse_known_genes_file</span><span class="p">(</span><span class="n">known_genes_file</span><span class="p">)</span>
+	<span class="n">reference</span> <span class="o">=</span> <span class="n">group_by_chromosome</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
+	<span class="n">reference</span> <span class="o">=</span> <span class="p">{</span><span class="n">chrom</span><span class="p">:</span> <span class="n">IntervalTree_from_peaks</span><span class="p">(</span><span class="n">genes</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span> <span class="k">for</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">genes</span> <span class="ow">in</span> <span class="n">reference</span><span class="p">}</span>
+
+	<span class="k">return</span> <span class="n">peaks</span>
+
+
+<span class="k">def</span> <span class="nf">dict_of_IntervalTree_from_motifs_file</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		motifs_file (str or FILE): filepath or file object for the mnotifs file</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of intervals in known genes to intervals in motifs.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">if</span> <span class="n">was_generated_by_pickle</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">):</span> <span class="k">return</span> <span class="n">load_pickled_object</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">)</span>
+
+	<span class="n">motifs</span> <span class="o">=</span> <span class="n">parse_motifs_file</span><span class="p">(</span><span class="n">motifs_file</span><span class="p">)</span>
+	<span class="n">motifs</span> <span class="o">=</span> <span class="n">group_by_chromosome</span><span class="p">(</span><span class="n">motifs</span><span class="p">)</span>
+	<span class="n">motifs</span> <span class="o">=</span> <span class="p">{</span><span class="n">chrom</span><span class="p">:</span> <span class="n">IntervalTree_from_motifs</span><span class="p">(</span><span class="n">chromosome_motifs</span><span class="p">)</span> <span class="k">for</span> <span class="n">chrom</span><span class="p">,</span> <span class="n">chromosome_motifs</span> <span class="ow">in</span> <span class="n">motifs</span><span class="p">}</span>
+
+	<span class="k">return</span> <span class="n">motifs</span>
+
+
+<span class="k">def</span> <span class="nf">group_by_chromosome</span><span class="p">(</span><span class="n">dataframe</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		dataframe (dataframe): Must be a dataframe with a chrom column</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: dictionary of chromosome names (e.g. &#39;chr1&#39;) to dataframes</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataframe</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;chrom&#39;</span><span class="p">)))</span>
+
+
+<span class="k">def</span> <span class="nf">IntervalTree_from_peaks</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		peaks (dataframe): Must be a dataframe with chromStart and chromEnd columns</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		IntervalTree: of peaks</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">intervals</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">peaks</span><span class="o">.</span><span class="n">chromStart</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">peaks</span><span class="o">.</span><span class="n">chromEnd</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">peaks</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+	<span class="n">tree</span> <span class="o">=</span> <span class="n">IntervalTree</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">tree</span>
+
+
+<span class="k">def</span> <span class="nf">IntervalTree_from_reference</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		reference (dataframe): Must be a dataframe with `strand`, `txStart`, and `txEnd` columns</span>
+<span class="sd">		options (dict): options which shall be unpacked here</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		IntervalTree: of genes from the reference</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">upstream_window</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">upstream_window</span>
+	<span class="n">downstream_window</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">downstream_window</span>
+	<span class="n">window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">tss</span>
+
+
+	<span class="k">if</span> <span class="n">window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site</span><span class="p">:</span>
+		<span class="n">starts</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">txStart</span> <span class="o">-</span> <span class="n">upstream_window</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strand</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">txEnd</span> <span class="o">-</span> <span class="n">upstream_window</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+		<span class="n">ends</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">txStart</span> <span class="o">+</span> <span class="n">downstream_window</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">strand</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">txEnd</span> <span class="o">+</span> <span class="n">downstream_window</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">starts</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">txStart</span> <span class="o">-</span> <span class="n">upstream_window</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+		<span class="n">ends</span> <span class="o">=</span> <span class="n">reference</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">txEnd</span> <span class="o">+</span> <span class="n">downstream_window</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+
+	<span class="n">intervals</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">starts</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">ends</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">reference</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+	<span class="n">tree</span> <span class="o">=</span> <span class="n">IntervalTree</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">tree</span>
+
+
+<span class="k">def</span> <span class="nf">IntervalTree_from_motifs</span><span class="p">(</span><span class="n">motifs</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		motifs (dataframe): Must be a dataframe with start and end columns</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		IntervalTree: of motifs</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">intervals</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="n">motifs</span><span class="o">.</span><span class="n">start</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">motifs</span><span class="o">.</span><span class="n">end</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">motifs</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+	<span class="n">tree</span> <span class="o">=</span> <span class="n">IntervalTree</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">intervals</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">tree</span>
+
+
+<span class="k">def</span> <span class="nf">intersection_of_dict_of_intervaltree</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		A (dict): is a dictionary of {chrom (str): IntervalTree}</span>
+<span class="sd">		B (dict): is a dictionary of {chrom (str): IntervalTree}</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">intersection</span> <span class="o">=</span> <span class="p">{}</span>
+
+	<span class="k">for</span> <span class="n">common_key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span> <span class="nb">set</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="p">):</span>
+
+		<span class="n">intersection</span><span class="p">[</span><span class="n">common_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">:</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">B</span><span class="p">[</span><span class="n">common_key</span><span class="p">]</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">[</span><span class="n">common_key</span><span class="p">]}</span>
+
+	<span class="k">return</span> <span class="n">intersection</span>
+
+
+
+<span class="k">def</span> <span class="nf">intersection_of_three_dicts_of_intervaltrees</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Summary line.</span>
+
+<span class="sd">    Extended description of function.</span>
+
+<span class="sd">	Arguments:</span>
+<span class="sd">		A (dict): is a dictionary of {chrom (str): IntervalTree}</span>
+<span class="sd">		B (dict): is a dictionary of {chrom (str): IntervalTree}</span>
+
+<span class="sd">	Returns:</span>
+<span class="sd">		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="n">intersection</span> <span class="o">=</span> <span class="p">{}</span>
+
+	<span class="k">for</span> <span class="n">common_key</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">A</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span> <span class="nb">set</span><span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="p">):</span>
+
+		<span class="n">intersection</span><span class="p">[</span><span class="n">common_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">a</span><span class="o">.</span><span class="n">data</span><span class="p">:</span> <span class="p">[</span><span class="n">b</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">B</span><span class="p">[</span><span class="n">common_key</span><span class="p">]</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">a</span><span class="p">)]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">A</span><span class="p">[</span><span class="n">common_key</span><span class="p">]}</span>
+
+	<span class="k">return</span> <span class="n">intersection</span>
+
+
+<span class="c1">########################################### Error Logic ###########################################</span>
+
+
+
+<span class="c1"># peaks = parse_peaks_file(&quot;/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed&quot;)</span>
+
+<span class="c1"># reference = parse_known_genes_file(&quot;/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.txt&quot;)</span>
+
+<span class="c1"># motifs = parse_motif_file(&quot;/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed&quot;)</span>
+
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Alexander LeNail.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -46,7 +46,90 @@
 <h1>Welcome to GarNet&#8217;s documentation!<a class="headerlink" href="#welcome-to-garnet-s-documentation" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
-<span class="target" id="module-map_peaks_to_known_genes"></span></div>
+<span class="target" id="module-garnet"></span><dl class="function">
+<dt id="garnet.map_known_genes_and_TF_binding_motifs_to_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_known_genes_and_TF_binding_motifs_to_peaks</code><span class="sig-paren">(</span><em>peaks_file</em>, <em>motifs_file</em>, <em>known_genes_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_and_TF_binding_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_and_TF_binding_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary line.</p>
+<p>Extended description of function.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Arguments:</dt>
+<dd>peaks_file (str or FILE): filepath or file object for the peaks file.
+known_genes_file (str or FILE): filepath or file object for the known_genes file
+motifs_file (str or FILE): filepath or file object for the mnotifs file
+options (dict): options which may come from the argument parser.</dd>
+<dt>Returns:</dt>
+<dd>dict: dictionary of intervals in peaks to intervals in known genes and motifs.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.map_known_genes_to_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_peaks</code><span class="sig-paren">(</span><em>peaks_file</em>, <em>known_genes_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
+<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of intervals in peaks to intervals in known genes.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.map_motifs_to_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_peaks</code><span class="sig-paren">(</span><em>peaks_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary line.</p>
+<p>Extended description of function.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>Arguments:</dt>
+<dd>peaks_file (str or FILE): filepath or file object for the peaks file.
+motifs_file (str or FILE): filepath or file object for the mnotifs file
+options (dict): options which may come from the argument parser.</dd>
+<dt>Returns:</dt>
+<dd>dict: dictionary of intervals in peaks to intervals in known genes.</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.map_motifs_to_known_genes">
+<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_known_genes</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_known_genes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_known_genes" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
+<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the mnotifs file</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of intervals in known genes to intervals in motifs.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="indices-and-tables">
 <h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
