@@ -15,7 +15,10 @@ import pandas as pd
 from intervaltree import Interval, IntervalTree
 
 # list of public methods:
-__all__ = ["map_known_genes_and_TF_binding_motifs_to_peaks", "map_known_genes_to_peaks", "map_motifs_to_peaks", "map_motifs_to_known_genes"]
+__all__ = [ "map_known_genes_and_TF_binding_motifs_to_peaks",
+			"map_known_genes_to_peaks",
+			"map_motifs_to_peaks",
+			"map_motifs_to_known_genes"]
 
 
 parser = argparse.ArgumentParser(description="""

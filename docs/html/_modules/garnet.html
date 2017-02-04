@@ -1,15 +1,15 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
-
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8">
     
-    <title>garnet &#8212; GarNet 2.0 documentation</title>
+    <title>garnet &mdash; GarNet 2.0 documentation</title>
     
-    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../_static/css/spc-bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="../_static/css/spc-extend.css">
+    <link rel="stylesheet" href="../_static/scipy.css" type="text/css" >
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" >
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
@@ -17,32 +17,54 @@
         VERSION:     '2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
+        HAS_SOURCE:  true
       };
     </script>
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <script type="text/javascript" src="../_static/js/copybutton.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" >
+    <link rel="search" title="Search" href="../search.html" >
+    <link rel="top" title="GarNet 2.0 documentation" href="../index.html" >
+    <link rel="up" title="Module code" href="index.html" > 
   </head>
-  <body role="document">
-      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
-          <span>GarNet 2.0 documentation</span></a></h1>
-        <h2 class="heading"><span>garnet</span></h2>
-      </div>
-      <div class="topnav" role="navigation" aria-label="top navigation">
-      
-        <p>
-        <a class="uplink" href="../index.html">Contents</a>
-        </p>
+  <body>
 
-      </div>
-      <div class="content">
+  <div class="container">
+    <div class="header">
+    </div>
+  </div>
+
+
+    <div class="container">
+      <div class="main">
         
-        
+
+	<div class="row-fluid"><div class="span1"></div>
+          <div class="span10">
+	  
+            
+	      <div class="row-fluid">
+		<div class="span9">
+  		  <div class="spc-navbar">
+		    
+    <ul class="nav nav-pills pull-left">
+        <li class="active"><a href="["></a></li>
+        <li class="active"><a href="]"></a></li>
+	
+        <li class="active"><a href="../index.html">GarNet 2.0 documentation</a></li>
+	
+          <li class="active"><a href="index.html" accesskey="U">Module code</a></li> 
+    </ul>
+		  </div>
+		</div>
+	      </div>
+            
+        <div class="bodywrapper">
+          <div class="body" id="spc-section-body">
+            
   <h1>Source code for garnet</h1><div class="highlight"><pre>
 <span></span><span class="ch">#!/usr/bin/env python3</span>
 
@@ -61,7 +83,10 @@
 <span class="kn">from</span> <span class="nn">intervaltree</span> <span class="k">import</span> <span class="n">Interval</span><span class="p">,</span> <span class="n">IntervalTree</span>
 
 <span class="c1"># list of public methods:</span>
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;map_known_genes_and_TF_binding_motifs_to_peaks&quot;</span><span class="p">,</span> <span class="s2">&quot;map_known_genes_to_peaks&quot;</span><span class="p">,</span> <span class="s2">&quot;map_motifs_to_peaks&quot;</span><span class="p">,</span> <span class="s2">&quot;map_motifs_to_known_genes&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span> <span class="s2">&quot;map_known_genes_and_TF_binding_motifs_to_peaks&quot;</span><span class="p">,</span>
+			<span class="s2">&quot;map_known_genes_to_peaks&quot;</span><span class="p">,</span>
+			<span class="s2">&quot;map_motifs_to_peaks&quot;</span><span class="p">,</span>
+			<span class="s2">&quot;map_motifs_to_known_genes&quot;</span><span class="p">]</span>
 
 
 <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;&quot;&quot;</span>
@@ -518,18 +543,31 @@
 
 </pre></div>
 
+          </div>
+        </div>
+          </div><div class="span1"></div>
+        </div>
       </div>
-      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
-      
-        <p>
-        <a class="uplink" href="../index.html">Contents</a>
-        </p>
+    </div>
 
+    <div class="container container-navbar-bottom">
+      <div class="spc-navbar">
+        
       </div>
-
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2017, Alexander LeNail.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.2.
+    </div>
+    <div class="container">
+    <div class="footer">
+    <div class="row-fluid">
+    <ul class="inline pull-left">
+      <li>
+        &copy; Copyright 2017, Alexander LeNail.
+      </li>
+      <li>
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.5.2.
+      </li>
+    </ul>
+    </div>
+    </div>
     </div>
   </body>
 </html>

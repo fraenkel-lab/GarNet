@@ -89,7 +89,20 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'haiku'
+# html_theme = 'haiku'
+
+html_theme = 'scipy'
+html_theme_path = ['_theme']
+#html_logo = '_static/scipyshiny_small.png'
+html_static_path = ['_static']
+html_theme_options = {
+    "edit_link": False,
+    "sidebar": "none",
+    "scipy_org_logo": False,
+    "navigation_links": False
+}
+
+
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
