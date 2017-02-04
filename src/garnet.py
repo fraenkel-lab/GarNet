@@ -23,13 +23,13 @@ parser = argparse.ArgumentParser(description="""
 """)
 
 parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
-	help='File')
+	help='')
 parser.add_argument('-m', '--motifs', dest='motifs_file', type=argparse.FileType('r'),
-	help='Filepath')
+	help='')
 parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.FileType('r'),
-	help='Filepath')
+	help='')
 parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
-	help='Filepath')
+	help='')
 
 parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
 	help='window width in base pairs to consider promoter region [default: %default]')
@@ -39,7 +39,7 @@ parser.add_argument('--tss', dest='tss', action='store_true',
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
 parser.add_argument('-o', '--output', dest='output_file', type=argparse.FileType('w'),
-	help='Filepath')
+	help='')
 
 
 if __name__ == '__main__':
@@ -64,17 +64,7 @@ if __name__ == '__main__':
 		output(result, output_file)
 
 
-	# what needs doing right now?
-	# essentially it needs testing
-
-	# the logic for the final function which does the full merge is needed.
-
-	# the logic for rebuilding the dataframe is needed, perhaps I should write that now.
-
-
-
 ######################################## File Parsing Logic #######################################
-
 
 def parse_known_genes_file(filepath_or_file_object):
 	"""
@@ -205,8 +195,6 @@ def output(data, output_file):
 	output_file.write('...')
 
 
-
-
 ######################################### Public Functions #########################################
 
 def unwritten_function(peaks_file, motifs_file, known_genes_file, options):
@@ -293,7 +281,6 @@ def map_motifs_to_known_genes(known_genes_file, motifs_file, options):  # kgXref
 
 ######################################## Private Functions ########################################
 
-
 def dict_of_IntervalTree_from_peak_file(peaks_file):
 	"""
 	Arguments:
@@ -341,7 +328,6 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file):
 	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
 
 	return motifs
-
 
 
 def group_by_chromosome(dataframe):
@@ -436,8 +422,6 @@ def intersection_of_dict_of_intervaltree(A, B):
 		intersection[common_key] = {a.data: [b.data for b in B[common_key].search(a)] for a in A[common_key]}
 
 	return intersection
-
-
 
 
 ########################################### Error Logic ###########################################
