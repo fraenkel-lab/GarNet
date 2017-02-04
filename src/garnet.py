@@ -134,7 +134,6 @@ def parse_peaks_file(filepath_or_file_object):
 	blockStarts - A comma-separated list of block starts. All of the blockStart positions should be calculated relative to chromStart. The number of items in this list should correspond to blockCount.
 
 
-
 	Returns:
 		dataframe: representation of peaks file
 	"""
@@ -199,7 +198,6 @@ def output(data, output_file):
 	Arguments:
 		options (dict): a filepath might be in here?
 
-
 	Returns:
 		None
 	"""
@@ -218,7 +216,6 @@ def unwritten_function(peaks_file, motifs_file, known_genes_file, options):
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the mnotifs file
 		options (dict): options which may come from the argument parser.
-
 
 	Returns:
 		dict: dictionary of intervals in peaks to intervals in known genes and motifs.
@@ -241,7 +238,6 @@ def map_known_genes_to_peaks(peaks_file, known_genes_file, options): # kgXref_fi
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		options (dict): options which may come from the argument parser.
 
-
 	Returns:
 		dict: dictionary of intervals in peaks to intervals in known genes.
 	"""
@@ -261,7 +257,6 @@ def map_motifs_to_peaks(peaks_file, motifs_file, options):
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		motifs_file (str or FILE): filepath or file object for the mnotifs file
 		options (dict): options which may come from the argument parser.
-
 
 	Returns:
 		dict: dictionary of intervals in peaks to intervals in known genes.
@@ -283,7 +278,6 @@ def map_motifs_to_known_genes(known_genes_file, motifs_file, options):  # kgXref
 		motifs_file (str or FILE): filepath or file object for the mnotifs file
 		options (dict): options which may come from the argument parser.
 
-
 	Returns:
 		dict: dictionary of intervals in known genes to intervals in motifs.
 	"""
@@ -301,6 +295,13 @@ def map_motifs_to_known_genes(known_genes_file, motifs_file, options):  # kgXref
 
 
 def dict_of_IntervalTree_from_peak_file(peaks_file):
+	"""
+	Arguments:
+		peaks_file (str or FILE): filepath or file object for the mnotifs file
+
+	Returns:
+		dict: dictionary of intervals in known genes to intervals in motifs.
+	"""
 
 	peaks = parse_peaks_file(peaks_file)
 	peaks = group_by_chromosome(peaks)
@@ -310,6 +311,14 @@ def dict_of_IntervalTree_from_peak_file(peaks_file):
 
 
 def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
+	"""
+	Arguments:
+		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		options (dict): options which may come from the argument parser.
+
+	Returns:
+		dict: dictionary of intervals in known genes to intervals in motifs.
+	"""
 
 	reference = parse_known_genes_file(known_genes_file)
 	reference = group_by_chromosome(reference)
@@ -319,6 +328,13 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
 
 
 def dict_of_IntervalTree_from_motifs_file(motifs_file):
+	"""
+	Arguments:
+		motifs_file (str or FILE): filepath or file object for the mnotifs file
+
+	Returns:
+		dict: dictionary of intervals in known genes to intervals in motifs.
+	"""
 
 	motifs = parse_motifs_file(motifs_file)
 	motifs = group_by_chromosome(motifs)
