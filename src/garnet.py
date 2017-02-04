@@ -16,30 +16,31 @@ from intervaltree import Interval, IntervalTree
 
 
 parser = argparse.ArgumentParser(description="""
-	if genes and peaks are provided, we map peaks to known genes
-	if genes and motifs are provided, we map motifs to known genes
-	if peaks and motifs are provided, we map motifs to peaks
-	if all three are provided, we map known genes to peaks, and map motifs to peaks
+    Scans genome for nearby features within a given window size.
+    If genes and peaks are provided, we map peaks to nearby genes.
+	If genes and motif locations are provided, we map motifs to nearby genes.
+	If peaks and motif locations are provided, we map motifs to nearby peaks.
+    If all three are provided, we map genes to peaks, and map motifs to peaks.
 """)
 
 parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
-	help='')
+	help='BED file containing epigenetic regions of interest') #Add future file formats as we support them
 parser.add_argument('-m', '--motifs', dest='motifs_file', type=argparse.FileType('r'),
-	help='')
+	help='BED file containing locations and scores of TF motifs')
 parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.FileType('r'),
-	help='')
+	help='file containing locations of known genes in the reference genome (i.e. from UCSC Annotation Database)')
 parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
-	help='')
+	help='file containing information about known genes (i.e. from UCSC Annotation Database)')
 
 parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
-	help='window width in base pairs to consider promoter region [default: %default]')
+	help='window width in base pairs to consider upstream region [default: %default]')
 parser.add_argument('--down', dest='downstream_window', type=int, default=2000,
 	help='window width in base pairs to consider downstream region [default: %default]')
 parser.add_argument('--tss', dest='tss', action='store_true',
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
 parser.add_argument('-o', '--output', dest='output_file', type=argparse.FileType('w'),
-	help='')
+	help='output file name')
 
 
 if __name__ == '__main__':
