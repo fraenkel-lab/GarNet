@@ -437,6 +437,8 @@ def intersection_of_dict_of_intervaltree(A, B):
 
 		intersection[common_key] = {a.data: [b.data for b in B[common_key].search(a)] for a in A[common_key]}
 
+		# [a.data + b.data for a in A[common_key] for b in B[common_key].search(a)]
+
 	return intersection
 
 
@@ -446,16 +448,18 @@ def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 	Arguments:
 		A (dict): is a dictionary of {chrom (str): IntervalTree}
 		B (dict): is a dictionary of {chrom (str): IntervalTree}
+		C (dict): is a dictionary of {chrom (str): IntervalTree}
 
 	Returns:
-		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }
+		dict: {keys shared between A, B and C: {intervals in A: [[list of overlapping intervals in B], [list of overlapping intervals in C]]} }
 	"""
 
 	intersection = {}
 
-	for common_key in set(A.keys()).intersection( set(B.keys()) ):
+	for common_key in set(A.keys()).intersection( set(B.keys()) ).intersection( set(C.keys()) ):
 
-		intersection[common_key] = {a.data: [b.data for b in B[common_key].search(a)] for a in A[common_key]}
+		intersection[common_key] = {a.data: [ [b.data for b in B[common_key].search(a)],
+											  [c.data for c in C[common_key].search(a)] ] for a in A[common_key]}
 
 	return intersection
 
