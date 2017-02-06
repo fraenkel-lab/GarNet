@@ -39,7 +39,7 @@ class FullPaths(argparse.Action):
 		setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
 
 def directory(dirname):
-	if not os.path.isdir(dirname): raise argparse.ArgumentTypeError("{0} is not a directory".format(dirname))
+	if not os.path.isdir(dirname): raise argparse.ArgumentTypeError(dirname + " is not a directory")
 	else: return dirname
 
 
