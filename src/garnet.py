@@ -2,6 +2,7 @@
 
 # Core python modules
 import sys
+import os
 
 # Peripheral python modules
 import argparse
@@ -24,12 +25,22 @@ __all__ = [ "map_known_genes_and_TF_binding_motifs_to_peaks",
 
 
 parser = argparse.ArgumentParser(description="""
-    Scans genome for nearby features within a given window size.
-    If genes and peaks are provided, we map peaks to nearby genes.
+	Scans genome for nearby features within a given window size.
+	If genes and peaks are provided, we map peaks to nearby genes.
 	If genes and motif locations are provided, we map motifs to nearby genes.
 	If peaks and motif locations are provided, we map motifs to nearby peaks.
-    If all three are provided, we map genes to peaks, and map motifs to peaks.
+	If all three are provided, we map genes to peaks, and map motifs to peaks.
 """)
+
+class FullPaths(argparse.Action):
+	"""Expand user- and relative-paths"""
+	def __call__(self, parser, namespace, values, option_string=None):
+		setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
+
+def directory(dirname):
+	if not os.path.isdir(dirname): raise argparse.ArgumentTypeError("{0} is not a directory".format(dirname))
+	else: return dirname
+
 
 parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
 	help='BED file containing epigenetic regions of interest') #Add future file formats as we support them
@@ -39,6 +50,8 @@ parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.File
 	help='file containing locations of known genes in the reference genome (i.e. from UCSC Annotation Database)')
 parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
 	help='file containing information about known genes (i.e. from UCSC Annotation Database)')
+parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.FileType('r'),
+	help='')
 
 parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
 	help='window width in base pairs to consider upstream region [default: %default]')
@@ -47,8 +60,8 @@ parser.add_argument('--down', dest='downstream_window', type=int, default=2000,
 parser.add_argument('--tss', dest='tss', action='store_true',
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
-parser.add_argument('-o', '--output', dest='output_folder', type=str,
-	help='output folder name')
+parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=directory, required=True,
+	help='output directory path')
 
 
 if __name__ == '__main__':
@@ -56,21 +69,23 @@ if __name__ == '__main__':
 	args = parser.parse_args(sys.argv[1:])
 
 	if args.peaks_file and args.motifs_file and args.known_genes_file:
-		map_known_genes_and_TF_binding_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, args)
+		result_dataframe = map_known_genes_and_TF_binding_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, args)
+		output(result_dataframe, args.output_dir)
+
+		if args.expression_file:
+			output(motif_regression(result_dataframe, args.expression_file, args), args.output_dir)
 
 	elif args.peaks_file and args.known_genes_file:
-		map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, args)
+		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, args), args.output_dir)
 
 	elif args.peaks_file and args.motifs_file:
-		map_motifs_to_peaks(args.peaks_file, args.motifs_file, args)
+		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, args), args.output_dir)
 
 	elif args.known_genes_file and args.motifs_file:
-		map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, args)
+		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, args), args.output_dir)
 
-	else: raise InvalidUsage("invalid usage")
+	else: raise InvalidCommandLineArgs()
 
-	if args.ouput_file:
-		output(result, output_folder)
 
 
 ######################################## File Parsing Logic #######################################
@@ -110,7 +125,7 @@ def parse_known_genes_file(filepath_or_file_object):
 def parse_peaks_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	My contract is that I will return to you an instance of Peaks, independent of the filetype you supply me
 
@@ -141,13 +156,30 @@ def parse_peaks_file(filepath_or_file_object):
 
 	peaks_fieldnames = ["chrom","chromStart","chromEnd","name","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"]
 
-	peaks_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=peaks_fieldnames)
-
 	# if peaks file format is MACS
 
+    # peaks_fieldnames = ["chr", "start", "end", "length", "summit", "tags", "-10*log10(pvalue)", "fold_enrichment FDR(%)"]
 
-	# if peaks file format is GPS
+	# if peaks file format is GEM
 
+	# Location:	the genome coordinate of this binding event
+	# IP binding strength:	the number of IP reads associated with the event
+	# Control binding strength:	the number of control reads in the corresponding region
+	# Fold:	fold enrichment (IP/Control)
+	# Expected binding strength:	the number of IP read counts expected in the binding region given its local context (defined by parameter W2 or W3), this is used as the Lambda parameter for the Poisson test
+	# Q_-lg10:	-log10(q-value), the q-value after multiple-testing correction, using the larger p-value of Binomial test and Poisson test
+	# P_-lg10:	-log10(p-value), the p-value is computed from the Binomial test given the IP and Control read counts (when there are control data)
+	# P_poiss:	-log10(p-value), the p-value is computed from the Poission test given the IP and Expected read counts (without considering control data)
+	# IPvsEMP:	Shape deviation, the KL divergence of the IP reads from the empirical read distribution (log10(KL)), this is used to filter predicted events given the --sd cutoff (default=-0.40).
+	# Noise:	the fraction of the event read count estimated to be noise
+	# KmerGroup:	the group of the k-mers associated with this binding event, only the most significant k-mer is shown, the n/n values are the total number of sequence hits of the k-mer group in the positive and negative training sequences (by default total 5000 of each), respectively
+	# KG_hgp:	log10(hypergeometric p-value), the significance of enrichment of this k-mer group in the positive vs negative training sequences (by default total 5000 of each), it is the hypergeometric p-value computed using the pos/neg hit counts and total counts
+	# Strand:	the sequence strand that contains the k-mer group match, the orientation of the motif is determined during the GEM motif discovery, '*' represents that no k-mer is found to associated with this event
+
+	# peaks_fieldnames = ["Location", "IP binding strength", "Control binding strength", "Fold", "Expected binding strength", "Q_-lg10", "P_-lg10", "P_poiss", "IPvsEMP", "Noise", "KmerGroup", "KG_hgp", "Strand"]
+
+
+	peaks_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=peaks_fieldnames)
 
 	return peaks_dataframe
 
@@ -155,7 +187,7 @@ def parse_peaks_file(filepath_or_file_object):
 def parse_kgXref_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	Returns:
 		dataframe: representation of xref file
@@ -171,7 +203,7 @@ def parse_kgXref_file(filepath_or_file_object):
 def parse_motif_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'rb')`)
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	Returns:
 		dataframe: representation of motif file
@@ -186,25 +218,38 @@ def parse_motif_file(filepath_or_file_object):
 	return motif_dataframe
 
 
-def save(object, filepath): return pickle.dump(object, open(filepath, "wb"))
+def parse_expression_file(filepath_or_file_object):
+	"""
+	Arguments:
+		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
+
+	Returns:
+		dataframe: representation of expression file
+	"""
+
+	return pd.read_csv(filepath_or_file_object, delimiter='\t', names=["name", "expression"])
+
+
+def save_as_pickled_object(object, filepath): return pickle.dump(object, open(filepath, "wb"))
 
 def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
 
 def was_generated_by_pickle(filepath): return False
 
 
-def output(data, output_folder):
+def output(dataframe, output_dir):
 	"""
 	Arguments:
-		options (dict): a filepath might be in here?
+		args (): an output_dir is in here
 
 	Returns:
 		None
 	"""
-	pass
 
-	# if we weren't passed in pickled objects, output pickled objects here.
+	output_dir = args.output_dir
+
 	# No matter what function was called, we'll output a dataframe as a csv.
+	dataframe.to_csv(output_dir+fielname, sep='\t')
 
 	# finally, under the circumstances that motif_regression was called,
 	# 	we'll make a plots dir, plot some shit.
@@ -220,11 +265,11 @@ def map_known_genes_and_TF_binding_motifs_to_peaks(peaks_file, motifs_file, know
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		motifs_file (str or FILE): filepath or file object for the motifs file
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dict: dictionary of intervals in peaks to intervals in known genes and motifs.
+		dataframe: dataframe
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
@@ -256,7 +301,7 @@ def map_known_genes_to_peaks(peaks_file, known_genes_file, options): # kgXref_fi
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dict: dictionary of intervals in peaks to intervals in known genes.
+		dataframe: dataframe
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
@@ -281,11 +326,11 @@ def map_motifs_to_peaks(peaks_file, motifs_file, options):
 	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
-		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		motifs_file (str or FILE): filepath or file object for the motifs file
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dict: dictionary of intervals in peaks to intervals in known genes.
+		dataframe: dataframe
 	"""
 
 
@@ -310,11 +355,11 @@ def map_known_genes_to_motifs(motifs_file, known_genes_file, options):  # kgXref
 	"""
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		motifs_file (str or FILE): filepath or file object for the motifs file
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dict: dictionary of intervals in known genes to intervals in motifs.
+		dataframe: dataframe
 	"""
 
 	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
@@ -335,7 +380,7 @@ def map_known_genes_to_motifs(motifs_file, known_genes_file, options):  # kgXref
 	return motifs_and_genes
 
 
-def motif_regression(df):
+def motif_regression(motifs_and_genes_dataframe, expression_file):
 	"""
 	Arguments:
 
@@ -343,7 +388,11 @@ def motif_regression(df):
 
 	"""
 
-	result = sm.ols(formula="A ~ B", data=df).fit()
+	expression = parse_expression_file(expression_file)
+
+	genes_and_motifs_matrix = construct_matrix(expression, motifs_and_genes_dataframe)
+
+	result = sm.ols(formula="A ~ B", data=genes_and_motifs_matrix).fit()
 
 	print(result.params)
 	print(result.summary())
@@ -355,10 +404,10 @@ def motif_regression(df):
 def dict_of_IntervalTree_from_peak_file(peaks_file):
 	"""
 	Arguments:
-		peaks_file (str or FILE): filepath or file object for the mnotifs file
+		peaks_file (str or FILE): filepath or file object for the peaks file
 
 	Returns:
-		dict: dictionary of intervals in known genes to intervals in motifs.
+		dict: dictionary of intervals in known genes to intervals in peaks.
 	"""
 
 	if was_generated_by_pickle(peaks_file): return load_pickled_object(peaks_file)
@@ -366,6 +415,8 @@ def dict_of_IntervalTree_from_peak_file(peaks_file):
 	peaks = parse_peaks_file(peaks_file)
 	peaks = group_by_chromosome(peaks)
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks}
+
+	save_as_pickled_object(peaks, options.output_dir + 'peaks_IntervalTree_dictionary.pickle')
 
 	return peaks
 
@@ -377,7 +428,7 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dict: dictionary of intervals in known genes to intervals in motifs.
+		dict: dictionary of chromosome to IntervalTree of known genes
 	"""
 
 	if was_generated_by_pickle(known_genes_file): return load_pickled_object(known_genes_file)
@@ -386,16 +437,18 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options):
 	reference = group_by_chromosome(reference)
 	reference = {chrom: IntervalTree_from_peaks(genes, options) for chrom, genes in reference}
 
-	return peaks
+	save_as_pickled_object(reference, options.output_dir + 'reference_IntervalTree_dictionary.pickle')
+
+	return reference
 
 
 def dict_of_IntervalTree_from_motifs_file(motifs_file):
 	"""
 	Arguments:
-		motifs_file (str or FILE): filepath or file object for the mnotifs file
+		motifs_file (str or FILE): filepath or file object for the motifs file
 
 	Returns:
-		dict: dictionary of intervals in known genes to intervals in motifs.
+		dict: dictionary of chromosome to IntervalTree of TF binding motifs
 	"""
 
 	if was_generated_by_pickle(motifs_file): return load_pickled_object(motifs_file)
@@ -403,6 +456,8 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file):
 	motifs = parse_motifs_file(motifs_file)
 	motifs = group_by_chromosome(motifs)
 	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs}
+
+	save_as_pickled_object(motifs, options.output_dir + 'motifs_IntervalTree_dictionary.pickle')
 
 	return motifs
 
@@ -545,5 +600,9 @@ def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 motifs = parse_motif_file("/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed")
 
 
-
+class Error(Exception):
+	def __init__(self, message):
+		self.message = message
+	def __str__(self):
+		return self.message
 
