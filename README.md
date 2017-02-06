@@ -8,7 +8,7 @@ This repository is in progress. See the issues and projects page for details. --
 
 Alternative IntervalTree implementations:
 
-- https://gist.github.com/shoyer/c939325f509d7c027949 (keep an eye on https://github.com/pandas-dev/pandas/pull/8707)
+- https://gist.github.com/shoyer/c939325f509d7c027949 (keep an eye on https://github.com/pandas-dev/pandas/pull/8707 which has now moved to https://github.com/pandas-dev/pandas/pull/15309)
 - https://github.com/ekg/intervaltree
 - https://github.com/cpcloud/banyan
 
