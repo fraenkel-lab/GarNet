@@ -21,7 +21,8 @@ from intervaltree import IntervalTree
 __all__ = [ "map_known_genes_and_TF_binding_motifs_to_peaks",
 			"map_known_genes_to_peaks",
 			"map_motifs_to_peaks",
-			"map_known_genes_to_motifs"]
+			"map_known_genes_to_motifs",
+			"motif_regression"]
 
 
 parser = argparse.ArgumentParser(description="""
@@ -73,7 +74,7 @@ if __name__ == '__main__':
 		output(result_dataframe, args.output_dir)
 
 		if args.expression_file:
-			output(motif_regression(result_dataframe, args.expression_file, args), args.output_dir)
+			output_figs(motif_regression(result_dataframe, args.expression_file, args), args.output_dir)
 
 	elif args.peaks_file and args.known_genes_file:
 		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, args), args.output_dir)
@@ -118,6 +119,8 @@ def parse_known_genes_file(filepath_or_file_object):
 	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
 
 	known_genes_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=known_genes_fieldnames)
+
+	known_genes_dataframe.rename(index=str, {"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"})
 
 	return known_genes_dataframe
 
@@ -181,6 +184,8 @@ def parse_peaks_file(filepath_or_file_object):
 
 	peaks_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=peaks_fieldnames)
 
+	peaks_dataframe.rename(index=str, {"chromStart":"peakStart", "chromEnd":"peakEnd", "name":"peakName", "score":"peakScore", "strand":"peakStrand"})
+
 	return peaks_dataframe
 
 
@@ -215,6 +220,8 @@ def parse_motif_file(filepath_or_file_object):
 
 	motif_dataframe["name"] = motif_dataframe["name"].split('=', expand=True)
 
+	motif_dataframe.rename(index=str, {"start":"motifStart", "end":"motifEnd", "name":"motifName", "score":"motifScore", "strand":"motifStrand"})
+
 	return motif_dataframe
 
 
@@ -240,21 +247,27 @@ def was_generated_by_pickle(filepath): return False
 def output(dataframe, output_dir):
 	"""
 	Arguments:
-		args (): an output_dir is in here
-
-	Returns:
-		None
+		dataframe (dataframe): the principal result of the analysis we want to write out as a csv.
+		output_dir (str): the fullpath of a directory we will write our output to.
 	"""
 
-	output_dir = args.output_dir
-
-	# No matter what function was called, we'll output a dataframe as a csv.
-	dataframe.to_csv(output_dir+fielname, sep='\t')
+	dataframe.to_csv(output_dir + filename, sep='\t')
 
 	# finally, under the circumstances that motif_regression was called,
 	# 	we'll make a plots dir, plot some shit.
 	#	output another dataframe as a CSV with the relevant information
 
+
+def output_figs(data, output_dir):
+	"""
+	Arguments:
+		dataframe (dataframe): the principal result of the analysis we want to write out as a csv.
+		output_dir (str): the fullpath of a directory we will write our output to.
+	"""
+
+	pass
+
+	# plots!
 
 
 
@@ -281,14 +294,12 @@ def map_known_genes_and_TF_binding_motifs_to_peaks(peaks_file, motifs_file, know
 
 	genes_and_motifs_grouped_by_peak = peaks_with_associated_genes_and_motifs.values()
 
-	motifs_and_genes = [(motif, gene) for genes, motifs in genes_and_motifs_grouped_by_peak for gene in genes for motif in motifs]
+	motifs_and_genes = [{**motif, **gene} for genes, motifs in genes_and_motifs_grouped_by_peak for gene in genes for motif in motifs]
 
-	motif_fields = []
-	gene_fields = ["name", "txStart", "txEnd"]
-	motifs_and_genes = [peak.select(motif_fields).extend(gene.select(gene_fields)) for motif, gene in motifs_and_genes]
-
-	new_column_names = ["chrom",... "geneName", "geneStart", "geneEnd"]
+	new_column_names = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", more???]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=new_column_names)
+
+	## compute statistics & add fields
 
 	return motifs_and_genes
 
@@ -310,14 +321,12 @@ def map_known_genes_to_peaks(peaks_file, known_genes_file, options): # kgXref_fi
 
 	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference, options)
 
-	peaks_and_genes = [(peak, gene) for peak, genes in peaks_with_associated_genes.items() for gene in genes]
-
-	peak_fields = ["chrom", "chromStart", "chromEnd", "name", "score"]
-	gene_fields = ["name", "txStart", "txEnd"]
-	peaks_and_genes = [peak.select(peak_fields).extend(gene.select(gene_fields)) for peak, gene in peaks_and_genes]
+	peaks_and_genes = [{**peak, **gene} for peak, genes in peaks_with_associated_genes.items() for gene in genes]
 
 	new_column_names = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "geneName", "geneStart", "geneEnd"]
 	peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes, columns=new_column_names)
+
+	## compute statistics & add fields
 
 	return peaks_and_genes
 
@@ -333,20 +342,17 @@ def map_motifs_to_peaks(peaks_file, motifs_file, options):
 		dataframe: dataframe
 	"""
 
-
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
 	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
 
 	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs, options)
 
-	peaks_and_motifs = [(peak, motif) for peak, motifs in peaks_with_associated_motifs.items() for motif in motifs]
+	peaks_and_motifs = [{**peak, **motif} for peak, motifs in peaks_with_associated_motifs.items() for motif in motifs]
 
-	peak_fields = ["chrom", "chromStart", "chromEnd", "name", "score"]
-	motif_fields = []
-	peaks_and_motifs = [peak.select(peak_fields).extend(motif.select(motif_fields)) for peak, motif in peaks_and_motifs]
-
-	new_column_names = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifName", "motifStart", "motifEnd"]
+	new_column_names = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifName", "motifStart", "motifEnd", "motifScore", more???]
 	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs, columns=new_column_names)
+
+	## compute statistics & add fields
 
 	return peaks_and_motifs
 
@@ -368,14 +374,12 @@ def map_known_genes_to_motifs(motifs_file, known_genes_file, options):  # kgXref
 
 	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference, options)
 
-	motifs_and_genes = [(motif, gene) for motif, genes in motifs_with_associated_genes.items() for gene in genes]
+	motifs_and_genes = [{**motif, **gene} for motif, genes in motifs_with_associated_genes.items() for gene in genes]
 
-	motif_fields = []
-	gene_fields = ["name", "txStart", "txEnd"]
-	motifs_and_genes = [motif.select(motif_fields).extend(gene.select(gene_fields)) for motif, gene in motifs_and_genes]
-
-	new_column_names = ["chrom",... "geneName", "geneStart", "geneEnd"]
+	new_column_names = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", more???]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=new_column_names)
+
+	## compute statistics & add fields
 
 	return motifs_and_genes
 
@@ -592,6 +596,21 @@ def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 ########################################### Error Logic ###########################################
 
 
+class Error(Exception):
+	def __init__(self, message):
+		self.message = message
+	def __str__(self):
+		return self.message
+
+
+class InvalidCommandLineArgs(Error):
+	def __init__(self, args):
+		pass
+		# initialize super with a generic message
+
+
+########################################## Testing Logic ##########################################
+
 
 # peaks = parse_peaks_file("/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed")
 
@@ -599,10 +618,4 @@ def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 
 motifs = parse_motif_file("/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed")
 
-
-class Error(Exception):
-	def __init__(self, message):
-		self.message = message
-	def __str__(self):
-		return self.message
 
