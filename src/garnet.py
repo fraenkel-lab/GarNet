@@ -25,6 +25,15 @@ __all__ = [ "map_known_genes_and_motifs_to_peaks",
 			"motif_regression"]
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
+handler.setFormatter(logging.Formatter('GarNet: %(levelname)s - %(message)s'))
+# handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(message)s'))
+logger.addHandler(handler)
+
+
 parser = argparse.ArgumentParser(description="""
 	Scans genome for nearby features within a given window size.
 	If genes and peaks are provided, we map peaks to nearby genes.
@@ -41,7 +50,6 @@ class FullPaths(argparse.Action):
 def directory(dirname):
 	if not os.path.isdir(dirname): raise argparse.ArgumentTypeError(dirname + " is not a directory")
 	else: return dirname
-
 
 parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
 	help='BED file containing epigenetic regions of interest')  # Add future file formats as we support them
@@ -206,7 +214,7 @@ def parse_kgXref_file(filepath_or_file_object):
 	return kgXref_dataframe
 
 
-def parse_motif_file(filepath_or_file_object):
+def parse_motifs_file(filepath_or_file_object):
 	"""
 	Arguments:
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
@@ -219,9 +227,9 @@ def parse_motif_file(filepath_or_file_object):
 
 	motif_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=motif_fieldnames)
 
-	motif_dataframe["name"] = motif_dataframe["name"].split('=', expand=True)
+	motif_dataframe['motifID'], motif_dataframe['motifName'] = motif_dataframe['name'].str.split('=', 1).str
 
-	motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "name":"motifName", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
+	motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
 
 	return motif_dataframe
 
@@ -252,6 +260,8 @@ def output(dataframe, output_dir):
 		output_dir (str): the fullpath of a directory we will write our output to.
 	"""
 
+	logger.info('writing output file')
+
 	dataframe.to_csv(output_dir + 'output', sep='\t')
 
 	# finally, under the circumstances that motif_regression was called,
@@ -274,7 +284,7 @@ def output_figs(data, output_dir):
 
 ######################################### Public Functions #########################################
 
-def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_file, options):
+def map_known_genes_and_motifs_to_peaks(known_genes_file, kgXref_file, motifs_file, peaks_file, options):
 	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
@@ -287,25 +297,22 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options['output_dir'])
-	# kgXref = parse_kgXref_file(kgXref_file)
-	motifs = dict_of_IntervalTree_from_motif_file(motifs_file)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, kgXref_file, options, options['output_dir'])
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options['output_dir'])
 
-	peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs, options)
+	peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
 
-	genes_and_motifs_grouped_by_peak = peaks_with_associated_genes_and_motifs.values() # TODO: this is now wrong.
+	motifs_and_genes = [{**motif, **gene} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
 
-	motifs_and_genes = [{**motif, **gene} for genes, motifs in genes_and_motifs_grouped_by_peak for gene in genes for motif in motifs]
-
-	new_column_names = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
-	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes)
+	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
+	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
 	## compute statistics & add fields
 
 	return motifs_and_genes
 
 
-def map_known_genes_to_peaks(known_genes_file, peaks_file, options): # kgXref_file too?
+def map_known_genes_to_peaks(known_genes_file, peaks_file, kgXref_file, options):
 	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
@@ -317,15 +324,14 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options): # kgXref_fi
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options['output_dir'])
-	# kgXref = parse_kgXref_file(kgXref_file)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, kgXref_file, options, options['output_dir'])
 
 	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference)
 
 	peaks_and_genes = [{**peak, **gene} for peak, gene in peaks_with_associated_genes]
 
-	new_column_names = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "geneName", "geneStart", "geneEnd"]
-	peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes, columns=new_column_names)
+	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "geneName", "geneStart", "geneEnd"]
+	peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes, columns=columns_to_output)
 	# peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes)
 
 	## compute statistics & add fields
@@ -351,15 +357,15 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 
 	peaks_and_motifs = [{**peak, **motif} for peak, motif in peaks_with_associated_motifs]
 
-	new_column_names = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifName", "motifStart", "motifEnd", "motifScore"]
-	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs)
+	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifID", "motifName", "motifStart", "motifEnd", "motifScore"]
+	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs, columns=columns_to_output)
 
 	## compute statistics & add fields
 
 	return peaks_and_motifs
 
 
-def map_known_genes_to_motifs(known_genes_file, motifs_file, options):  # kgXref_file too?
+def map_known_genes_to_motifs(known_genes_file, motifs_file, kgXref_file, options):
 	"""
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
@@ -371,15 +377,14 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):  # kgXref
 	"""
 
 	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options['output_dir'])
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options['output_dir'])
-	# kgXref = parse_kgXref_file(kgXref_file)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, kgXref_file, options, options['output_dir'])
 
 	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
 
 	motifs_and_genes = [{**motif, **gene} for motif, gene in motifs_with_associated_genes]
 
-	new_column_names = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
-	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes)
+	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
+	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
 	## compute statistics & add fields
 
@@ -418,18 +423,25 @@ def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 		dict: dictionary of intervals in known genes to intervals in peaks.
 	"""
 
-	if was_generated_by_pickle(peaks_file): return load_pickled_object(peaks_file)
+	logger.info("Checking if peaks file was generated by pickle, which would imply it's been parsed to IntervalTree already")
 
+	if was_generated_by_pickle(peaks_file):
+		logger.info('  - Peaks file seems to have been generated by pickle, assuming IntervalTree format and proceeding...')
+		return load_pickled_object(peaks_file)
+
+	logger.info('  - Peaks file does not seem to have been generated by pickle, proceeding to parse...')
 	peaks = parse_peaks_file(peaks_file)
 	peaks = group_by_chromosome(peaks)
+	logger.info('  - Parse complete, constructing IntervalTrees...')
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks.items()}
 
+	logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
 	save_as_pickled_object(peaks, output_dir + 'peaks_IntervalTree_dictionary.pickle')
 
 	return peaks
 
 
-def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_dir):
+def dict_of_IntervalTree_from_reference_file(known_genes_file, kgXref_file, options, output_dir):
 	"""
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
@@ -439,12 +451,26 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 		dict: dictionary of chromosome to IntervalTree of known genes
 	"""
 
-	if was_generated_by_pickle(known_genes_file): return load_pickled_object(known_genes_file)
+	logger.info("Checking if known genes file was generated by pickle, which would imply it's been parsed to IntervalTree already")
 
+	if was_generated_by_pickle(known_genes_file):
+		logger.info('  - Known Genes file seems to have been generated by pickle, assuming IntervalTree format and proceeding...')
+		return load_pickled_object(known_genes_file)
+
+	logger.info('  - Known Genes file does not seem to have been generated by pickle, proceeding to parse...')
 	reference = parse_known_genes_file(known_genes_file)
+
+	if kgXref_file:
+		logger.info('  - Program was supplied with a kgXref file, merging with reference...')
+		kgXref = parse_kgXref_file(kgXref_file)
+		reference.merge(kgXref, left_on='geneName', right_on='kgID', how='left')
+	else: logger.info('  - Program was not supplied with a kgXref file, gene names will only be supplied as kgID')
+
 	reference = group_by_chromosome(reference)
+	logger.info('  - Parse complete, constructing IntervalTrees...')
 	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference.items()}
 
+	logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
 	save_as_pickled_object(reference, output_dir + 'reference_IntervalTree_dictionary.pickle')
 
 	return reference
@@ -459,12 +485,19 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file, output_dir):
 		dict: dictionary of chromosome to IntervalTree of TF binding motifs
 	"""
 
-	if was_generated_by_pickle(motifs_file): return load_pickled_object(motifs_file)
+	logger.info("Checking if motifs file was generated by pickle, which would imply it's been parsed to IntervalTree already")
 
+	if was_generated_by_pickle(motifs_file):
+		logger.info('  - Motifs file seems to have been generated by pickle, assuming IntervalTree format and proceeding...')
+		return load_pickled_object(motifs_file)
+
+	logger.info('  - Motifs file does not seem to have been generated by pickle, proceeding to parse...')
 	motifs = parse_motifs_file(motifs_file)
 	motifs = group_by_chromosome(motifs)
+	logger.info('  - Parse complete, constructing IntervalTrees...')
 	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs.items()}
 
+	logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
 	save_as_pickled_object(motifs, output_dir + 'motifs_IntervalTree_dictionary.pickle')
 
 	return motifs
@@ -538,7 +571,7 @@ def IntervalTree_from_motifs(motifs):
 		IntervalTree: of motifs
 	"""
 
-	intervals = zip(motifs.start.values, motifs.end.values, motifs.to_dict(orient='records'))
+	intervals = zip(motifs.motifStart.values, motifs.motifEnd.values, motifs.to_dict(orient='records'))
 
 	tree = IntervalTree.from_tuples(intervals)
 
@@ -554,6 +587,8 @@ def intersection_of_dict_of_intervaltree(A, B):
 	Returns:
 		dict: {keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }
 	"""
+
+	logger.info('Computing intersection operation of IntervalTrees for each chromosome...')
 
 	# Keys are chromosomes. We only want to look through chromosomes where there is potential for overlap
 	common_keys = set(A.keys()).intersection( set(B.keys()) )
@@ -588,6 +623,8 @@ def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 		dict: {keys shared between A, B and C: {intervals in A: [[list of overlapping intervals in B], [list of overlapping intervals in C]]} }
 	"""
 
+	logger.info('Computing intersection operation of three IntervalTrees for each chromosome...')
+
 	# See `intersection_of_dict_of_intervaltree` (above) for programmer's notes. This function is nearly identical.
 	common_keys = set(A.keys()).intersection( set(B.keys()) ).intersection( set(C.keys()) )
 
@@ -616,13 +653,16 @@ class InvalidCommandLineArgs(Error):
 ########################################## Testing Logic ##########################################
 
 
+# peaks = "/Users/alex/Documents/GarNet2/src/peaks_IntervalTree_dictionary.pickle"
 peaks = "/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed"
 
+# reference = "/Users/alex/Documents/GarNet2/src/reference_IntervalTree_dictionary.pickle"
 reference = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.tsv"
 
+kgXref = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_kgXref.tsv"
+
+# motifs = "/Users/alex/Documents/GarNet2/src/motifs_IntervalTree_dictionary.pickle"
 motifs = "/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
 
-
-output(map_known_genes_to_peaks(reference, peaks, {"upstream_window":2000, "downstream_window":2000, "tss":False, "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
-
+output(map_known_genes_and_motifs_to_peaks(reference, kgXref, motifs, peaks, {"upstream_window":2000, "downstream_window":2000, "tss":False, "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
 
