@@ -249,7 +249,7 @@ def save_as_pickled_object(object, filepath): return pickle.dump(object, open(fi
 
 def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
 
-def was_generated_by_pickle(filepath): return True
+def was_generated_by_pickle(filepath): return False
 
 
 def output(dataframe, output_dir):
