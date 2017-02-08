@@ -29,8 +29,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
-handler.setFormatter(logging.Formatter('GarNet: %(levelname)s - %(message)s'))
-# handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(message)s'))
+handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(message)s', "%I:%M:%S"))
 logger.addHandler(handler)
 
 
@@ -653,14 +652,15 @@ class InvalidCommandLineArgs(Error):
 ########################################## Testing Logic ##########################################
 
 
-# peaks = "/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed"
-# reference = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.tsv"
-# kgXref = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_kgXref.tsv"
-# motifs = "/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
+peaks = "/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed"
+reference = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.tsv"
+kgXref = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_kgXref.tsv"
+motifs = "/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
 
-peaks = "/Users/alex/Documents/GarNet2/src/peaks_IntervalTree_dictionary.pickle"
-reference = "/Users/alex/Documents/GarNet2/src/reference_IntervalTree_dictionary.pickle"
-motifs = "/Users/alex/Documents/GarNet2/src/motifs_IntervalTree_dictionary.pickle"
+# peaks = "/Users/alex/Documents/GarNet2/src/peaks_IntervalTree_dictionary.pickle"
+# reference = "/Users/alex/Documents/GarNet2/src/reference_IntervalTree_dictionary.pickle"
+# motifs = "/Users/alex/Documents/GarNet2/src/motifs_IntervalTree_dictionary.pickle"
 
-output(map_known_genes_and_motifs_to_peaks(reference, '', motifs, peaks, {"upstream_window":2000, "downstream_window":2000, "tss":False, "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
+output(map_known_genes_and_motifs_to_peaks(reference, kgXref, motifs, peaks, {"upstream_window":2000, "downstream_window":2000, "tss":False, "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
+
 
