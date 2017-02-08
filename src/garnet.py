@@ -79,7 +79,7 @@ parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=
 # 	options = {"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "output_dir": args.output_dir}
 
 # 	if args.peaks_file and args.motifs_file and args.known_genes_file:
-# 		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
+# 		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.kgXref_file, args.motifs_file, args.known_genes_file, options)
 # 		output(result_dataframe, args.output_dir)
 
 # 		if args.expression_file:
@@ -250,7 +250,7 @@ def save_as_pickled_object(object, filepath): return pickle.dump(object, open(fi
 
 def load_pickled_object(filepath): return pickle.load(open(filepath, "rb"))
 
-def was_generated_by_pickle(filepath): return False
+def was_generated_by_pickle(filepath): return True
 
 
 def output(dataframe, output_dir):
@@ -260,7 +260,7 @@ def output(dataframe, output_dir):
 		output_dir (str): the fullpath of a directory we will write our output to.
 	"""
 
-	logger.info('writing output file')
+	logger.info('Writing output file')
 
 	dataframe.to_csv(output_dir + 'output', sep='\t')
 
@@ -304,7 +304,7 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, kgXref_file, motifs_fi
 
 	motifs_and_genes = [{**motif, **gene} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
 
-	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
+	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd"]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
 	## compute statistics & add fields
@@ -653,16 +653,14 @@ class InvalidCommandLineArgs(Error):
 ########################################## Testing Logic ##########################################
 
 
-# peaks = "/Users/alex/Documents/GarNet2/src/peaks_IntervalTree_dictionary.pickle"
-peaks = "/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed"
+# peaks = "/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed"
+# reference = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.tsv"
+# kgXref = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_kgXref.tsv"
+# motifs = "/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
 
-# reference = "/Users/alex/Documents/GarNet2/src/reference_IntervalTree_dictionary.pickle"
-reference = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.tsv"
+peaks = "/Users/alex/Documents/GarNet2/src/peaks_IntervalTree_dictionary.pickle"
+reference = "/Users/alex/Documents/GarNet2/src/reference_IntervalTree_dictionary.pickle"
+motifs = "/Users/alex/Documents/GarNet2/src/motifs_IntervalTree_dictionary.pickle"
 
-kgXref = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_kgXref.tsv"
-
-# motifs = "/Users/alex/Documents/GarNet2/src/motifs_IntervalTree_dictionary.pickle"
-motifs = "/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
-
-output(map_known_genes_and_motifs_to_peaks(reference, kgXref, motifs, peaks, {"upstream_window":2000, "downstream_window":2000, "tss":False, "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
+output(map_known_genes_and_motifs_to_peaks(reference, '', motifs, peaks, {"upstream_window":2000, "downstream_window":2000, "tss":False, "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
 
