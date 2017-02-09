@@ -72,28 +72,28 @@ parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=
 	help='output directory path')
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
-# 	args = parser.parse_args()
-# 	options = {"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir}
+	args = parser.parse_args()
+	options = {"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir}
 
-# 	if args.peaks_file and args.motifs_file and args.known_genes_file:
-# 		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
-# 		output(result_dataframe, args.output_dir)
+	if args.peaks_file and args.motifs_file and args.known_genes_file:
+		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
+		output(result_dataframe, args.output_dir)
 
-# 		if args.expression_file:
-# 			output_figs(motif_regression(result_dataframe, args.expression_file, options), args.output_dir)
+		if args.expression_file:
+			output_figs(motif_regression(result_dataframe, args.expression_file, options), args.output_dir)
 
-# 	elif args.peaks_file and args.known_genes_file:
-# 		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir)
+	elif args.peaks_file and args.known_genes_file:
+		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir)
 
-# 	elif args.peaks_file and args.motifs_file:
-# 		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, options), args.output_dir)
+	elif args.peaks_file and args.motifs_file:
+		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, options), args.output_dir)
 
-# 	elif args.known_genes_file and args.motifs_file:
-# 		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir)
+	elif args.known_genes_file and args.motifs_file:
+		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir)
 
-# 	else: raise InvalidCommandLineArgs()
+	else: raise InvalidCommandLineArgs()
 
 
 
@@ -121,7 +121,7 @@ def parse_known_genes_file(known_genes_filepath_or_file_object, kgXref_filepath_
 	`alignID` varchar(255) NOT NULL DEFAULT '',
 
 	Returns:
-		dataframe: representation of known genes file
+		dataframe: known genes dataframe
 	"""
 
 	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
@@ -168,7 +168,7 @@ def parse_peaks_file(filepath_or_file_object):
 
 
 	Returns:
-		dataframe: representation of peaks file
+		dataframe: peaks dataframe
 	"""
 
 	# if peaks file format is BED
@@ -211,7 +211,7 @@ def parse_kgXref_file(filepath_or_file_object):
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	Returns:
-		dataframe: representation of xref file
+		dataframe: additional known genes information as a dataframe
 	"""
 
 	kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
@@ -227,7 +227,7 @@ def parse_motifs_file(filepath_or_file_object):
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	Returns:
-		dataframe: representation of motif file
+		dataframe: motif dataframe
 	"""
 
 	motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
@@ -247,7 +247,7 @@ def parse_expression_file(filepath_or_file_object):
 		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
 
 	Returns:
-		dataframe: representation of expression file
+		dataframe: expression dataframe
 	"""
 
 	return pd.read_csv(filepath_or_file_object, delimiter='\t', names=["name", "expression"])
@@ -271,10 +271,6 @@ def output(dataframe, output_dir):
 	logger.info('Writing output file')
 
 	dataframe.to_csv(output_dir + 'output', sep='\t', header=True, index=False)
-
-	# finally, under the circumstances that motif_regression was called,
-	# 	we'll make a plots dir, plot some shit.
-	#	output another dataframe as a CSV with the relevant information
 
 
 def output_figs(data, output_dir):
@@ -301,7 +297,8 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dataframe: dataframe
+		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
+			with the restriction that these motifs and genes must have been found near a peak.
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
@@ -328,7 +325,7 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dataframe: dataframe
+		dataframe: A dataframe listing peaks and nearby genes
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
@@ -355,7 +352,7 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dataframe: dataframe
+		dataframe: A dataframe listing peaks and nearby transcription factor binding motifs
 	"""
 
 	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
@@ -381,7 +378,7 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 		options (dict): options which may come from the argument parser.
 
 	Returns:
-		dataframe: dataframe
+		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
 	"""
 
 	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options['output_dir'])
@@ -402,9 +399,11 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 def motif_regression(motifs_and_genes_dataframe, expression_file):
 	"""
 	Arguments:
+		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
+		expression_file (str or FILE): a tsv file of expression data, with geneSymbol, score columns
 
 	Returns:
-
+		dataframe: slope and pval of linear regfression for each transcription factor.
 	"""
 
 	expression_dataframe = parse_expression_file(expression_file)
@@ -538,7 +537,7 @@ def IntervalTree_from_reference(reference, options):
 	"""
 	Arguments:
 		reference (dataframe): Must be a dataframe with `strand`, `geneStart`, and `geneEnd` columns
-		options (dict): options which shall be unpacked here
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool}
 
 	Returns:
 		IntervalTree: of genes from the reference
@@ -568,7 +567,7 @@ def IntervalTree_from_reference(reference, options):
 def IntervalTree_from_motifs(motifs):
 	"""
 	Arguments:
-		motifs (dataframe): Must be a dataframe with start and end columns
+		motifs (dataframe): Must be a dataframe with motifStart and motifEnd columns
 
 	Returns:
 		IntervalTree: of motifs
@@ -654,25 +653,5 @@ class InvalidCommandLineArgs(Error):
 
 
 ########################################## Testing Logic ##########################################
-
-
-# peaks = "/Users/alex/Documents/GarNet2/data/A549_FOXA1_broadPeak.bed"
-# reference = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_knownGenes.tsv"
-# motifs = "/Users/alex/Documents/GarNet2/data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
-
-kgXref = "/Users/alex/Documents/GarNet2/data/ucsc_hg19_kgXref.tsv"
-expression = "/Users/alex/Documents/GarNet2/data/Tgfb_exp.tsv"
-output_file = "/Users/alex/Documents/GarNet2/src/output"
-
-peaks = "/Users/alex/Documents/GarNet2/src/peaks_IntervalTree_dictionary.pickle"
-reference = "/Users/alex/Documents/GarNet2/src/reference_IntervalTree_dictionary.pickle"
-motifs = "/Users/alex/Documents/GarNet2/src/motifs_IntervalTree_dictionary.pickle"
-
-output(map_known_genes_and_motifs_to_peaks(reference, motifs, peaks,
-	{"upstream_window":2000,
-	 "downstream_window":2000,
-	 "tss":False,
-	 "kgXref_file":kgXref,
-	 "output_dir":'/Users/alex/Documents/GarNet2/src/'}), '/Users/alex/Documents/GarNet2/src/')
 
 
