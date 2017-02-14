@@ -64,8 +64,8 @@
   <div class="section" id="module-garnet">
 <span id="welcome-to-garnet-s-documentation"></span><h1>Welcome to GarNet&#8217;s documentation!<a class="headerlink" href="#module-garnet" title="Permalink to this headline">¶</a></h1>
 <dl class="function">
-<dt id="garnet.map_known_genes_and_TF_binding_motifs_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_and_TF_binding_motifs_to_peaks</code><span class="sig-paren">(</span><em>peaks_file</em>, <em>motifs_file</em>, <em>known_genes_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_and_TF_binding_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_and_TF_binding_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
+<dt id="garnet.map_known_genes_and_motifs_to_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_known_genes_and_motifs_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_and_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_and_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -73,15 +73,20 @@
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the mnotifs file</li>
+<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
 <li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of intervals in peaks to intervals in known genes and motifs.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>a dataframe with rows of transcription factor binding motifs and nearby genes</dt>
+<dd><p class="first last">with the restriction that these motifs and genes must have been found near a peak.</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
 </td>
 </tr>
 </tbody>
@@ -90,7 +95,7 @@
 
 <dl class="function">
 <dt id="garnet.map_known_genes_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_peaks</code><span class="sig-paren">(</span><em>peaks_file</em>, <em>known_genes_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_peaks" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -102,10 +107,10 @@
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of intervals in peaks to intervals in known genes.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing peaks and nearby genes</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
 </td>
 </tr>
 </tbody>
@@ -114,22 +119,22 @@
 
 <dl class="function">
 <dt id="garnet.map_motifs_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_peaks</code><span class="sig-paren">(</span><em>peaks_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_peaks</code><span class="sig-paren">(</span><em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the mnotifs file</li>
+<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
 <li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of intervals in peaks to intervals in known genes.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing peaks and nearby transcription factor binding motifs</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
 </td>
 </tr>
 </tbody>
@@ -137,23 +142,46 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="garnet.map_motifs_to_known_genes">
-<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_known_genes</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_known_genes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_known_genes" title="Permalink to this definition">¶</a></dt>
+<dt id="garnet.map_known_genes_to_motifs">
+<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_motifs</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_motifs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_motifs" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the mnotifs file</li>
+<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
 <li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of intervals in known genes to intervals in motifs.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing transcription factor binding motifs and nearby genes.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.motif_regression">
+<code class="descclassname">garnet.</code><code class="descname">motif_regression</code><span class="sig-paren">(</span><em>motifs_and_genes_dataframe</em>, <em>expression_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#motif_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.motif_regression" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>motifs_and_genes_dataframe</strong> (<em>dataframe</em>) &#8211; the outcome of map_known_genes_and_motifs_to_peaks</li>
+<li><strong>expression_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; a tsv file of expression data, with geneSymbol, score columns</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">slope and pval of linear regfression for each transcription factor.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
 </td>
 </tr>
 </tbody>
