@@ -547,7 +547,6 @@ def IntervalTree_from_reference(reference, options):
 	downstream_window = options['downstream_window']
 	window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site = options['tss']
 
-
 	if window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site:
 		starts = reference.apply(lambda x: x.geneStart - upstream_window if x.strand == '+' else x.geneEnd - upstream_window, axis=1)
 		ends = reference.apply(lambda x: x.geneStart + downstream_window if x.strand == '+' else x.geneEnd + downstream_window, axis=1)
@@ -555,7 +554,6 @@ def IntervalTree_from_reference(reference, options):
 	else:
 		starts = reference.apply(lambda x: x.geneStart - upstream_window, axis=1)
 		ends = reference.apply(lambda x: x.geneEnd + downstream_window, axis=1)
-
 
 	intervals = zip(starts.values, ends.values, reference.to_dict(orient='records'))
 
