@@ -12,7 +12,9 @@ import logging
 # Core python external libraries
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as sm
+from statsmodels.formula.api import ols as linear_regression
+from statsmodels.graphics.regressionplots import abline_plot as plot_regression
+
 
 # Peripheral python external libraries
 from intervaltree import IntervalTree
@@ -22,7 +24,7 @@ __all__ = [ "map_known_genes_and_motifs_to_peaks",
 			"map_known_genes_to_peaks",
 			"map_motifs_to_peaks",
 			"map_known_genes_to_motifs",
-			"motif_regression"]
+			"TF_regression"]
 
 
 logger = logging.getLogger(__name__)
@@ -82,7 +84,7 @@ if __name__ == '__main__':
 		output(result_dataframe, args.output_dir)
 
 		if args.expression_file:
-			output_figs(motif_regression(result_dataframe, args.expression_file, options), args.output_dir)
+			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir)
 
 	elif args.peaks_file and args.known_genes_file:
 		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir)
@@ -273,19 +275,6 @@ def output(dataframe, output_dir):
 	dataframe.to_csv(output_dir + 'output', sep='\t', header=True, index=False)
 
 
-def output_figs(data, output_dir):
-	"""
-	Arguments:
-		dataframe (dataframe): the principal result of the analysis we want to write out as a csv.
-		output_dir (str): the fullpath of a directory we will write our output to.
-	"""
-
-	pass
-
-	# plots!
-
-
-
 ######################################### Public Functions #########################################
 
 def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_file, options):
@@ -312,7 +301,7 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd"]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
-	## compute statistics & add fields
+	## TODO: compute statistics & add fields
 
 	return motifs_and_genes
 
@@ -339,7 +328,7 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 	peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes, columns=columns_to_output)
 	# peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes)
 
-	## compute statistics & add fields
+	## TODO: compute statistics & add fields
 
 	return peaks_and_genes
 
@@ -365,7 +354,7 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifID", "motifName", "motifStart", "motifEnd", "motifScore"]
 	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs, columns=columns_to_output)
 
-	## compute statistics & add fields
+	## TODO: compute statistics & add fields
 
 	return peaks_and_motifs
 
@@ -391,12 +380,12 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
-	## compute statistics & add fields
+	## TODO: compute statistics & add fields
 
 	return motifs_and_genes
 
 
-def motif_regression(motifs_and_genes_dataframe, expression_file):
+def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	"""
 	Arguments:
 		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
@@ -406,19 +395,34 @@ def motif_regression(motifs_and_genes_dataframe, expression_file):
 		dataframe: slope and pval of linear regfression for each transcription factor.
 	"""
 
+	output_dir = options.get('output_dir')
+
 	expression_dataframe = parse_expression_file(expression_file)
 
-	genes_and_motifs_matrix = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneSymbol', right_on='name', how='inner')
+	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneSymbol', right_on='name', how='inner')
 
-	motifs_and_associated_expression_profiles = list(genes_and_motifs_matrix.groupby('motifName'))
+	# the same geneSymbol might have different names but since the expression is geneSymbol-wise
+	# these additional names cause bogus regression p-values. Get rid of them here.
+	motifs_genes_and_expression_levels.drop_duplicates(subset='geneSymbol', inplace=True)
 
-	for motif, expression_profile in motifs_and_associated_expression_profiles:
+	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
+	imputed_TF_features = []
+	logger.info("Performing linear regression on "+ str(len(TFs_and_associated_expression_profiles)) +" transcription factor expression profiles...")
+
+	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
+
 		# Ordinary Least Squares linear regression
-		result = sm.ols(formula="expression ~ motifScore", data=expression_profile).fit()
+		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-		# print(result.params)
-		# print(result.summary())
+		if output_dir:
+			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+			plot.savefig(output_dir + 'regression_plots/' + filename + '.png')
 
+		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
+
+	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])
+
+	return imputed_TF_features_dataframe
 
 
 ######################################## Private Functions ########################################
@@ -609,7 +613,6 @@ def intersection_of_dict_of_intervaltree(A, B):
 	intersection = [(a.data, b.data) for key in common_keys for a in A[key] for b in B[key].search(a)]
 
 	return intersection
-
 
 
 def intersection_of_three_dicts_of_intervaltrees(A, B, C):
