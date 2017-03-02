@@ -399,11 +399,13 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	expression_dataframe = parse_expression_file(expression_file)
 
+	logger.info(expression_dataframe.shape)
+
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneSymbol', right_on='name', how='inner')
 
 	# the same geneSymbol might have different names but since the expression is geneSymbol-wise
 	# these additional names cause bogus regression p-values. Get rid of them here.
-	motifs_genes_and_expression_levels.drop_duplicates(subset='geneSymbol', inplace=True)
+	motifs_genes_and_expression_levels.drop_duplicates(subset=['geneSymbol', 'motifID'], inplace=True)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
@@ -412,13 +414,16 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
 
 		# Ordinary Least Squares linear regression
-		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
+		if expression_profile.shape[0] > 2:
+			result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
+			logger.info(expression_profile)
 
-		if output_dir:
-			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			plot.savefig(output_dir + 'regression_plots/' + filename + '.png')
+			if False:
+				plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+				plot.savefig(output_dir + 'regression_plots/' + filename + '.png')
+			logger.info(result.pvalues['motifScore'])
 
-		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
+			imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])
 
