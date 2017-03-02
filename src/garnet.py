@@ -399,8 +399,6 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	expression_dataframe = parse_expression_file(expression_file)
 
-	logger.info(expression_dataframe.shape)
-
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneSymbol', right_on='name', how='inner')
 
 	# the same geneSymbol might have different names but since the expression is geneSymbol-wise
@@ -414,14 +412,14 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
 
 		# Ordinary Least Squares linear regression
+		# Check if there are sufficient samples for regression
 		if expression_profile.shape[0] > 2:
 			result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
-			logger.info(expression_profile)
 
-			if False:
+			# This doesn't work for me rn
+			if output_dir:
 				plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
 				plot.savefig(output_dir + 'regression_plots/' + filename + '.png')
-			logger.info(result.pvalues['motifScore'])
 
 			imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
