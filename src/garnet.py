@@ -15,9 +15,9 @@ import pandas as pd
 from statsmodels.formula.api import ols as linear_regression
 from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 
-
 # Peripheral python external libraries
 from intervaltree import IntervalTree
+import jinja2
 
 # list of public methods:
 __all__ = [ "map_known_genes_and_motifs_to_peaks",
@@ -34,6 +34,8 @@ handler.setLevel(logging.INFO)
 handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(message)s', "%I:%M:%S"))
 logger.addHandler(handler)
 
+templateLoader = jinja2.FileSystemLoader(searchpath="/")
+templateEnv = jinja2.Environment(loader=templateLoader)
 
 class Options:
 	def __init__(self, options):
@@ -416,11 +418,17 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 		if options.output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			plot.savefig(output_dir + 'regression_plots/' + TF_name + '.png')
+			plot.savefig(options.output_dir + 'regression_plots/' + TF_name + '.png')
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])
+
+	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
+	if options.output_dir:
+		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options.output_dir+'regression_plots/', TFs=imputed_TF_features)
+		with open(options.output_dir+"summary.html", "wb") as summary_output_file:
+		    summary_output_file.write(html_output)
 
 	return imputed_TF_features_dataframe
 

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+  <head>
+    <title>GarNet Results</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <style type="text/css">
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <table class="table display" id="mytable2">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ENSEMBLID</th>
+            <th>TF</th>
+            <th>feature_pos</th>
+
+          </tr>
+        </thead>
+        <tbody>
+          {% for Transcription_Factor, Slope, PVal in TFs %}
+          <tr>
+
+            <td>{{ loop.index }}</td>
+            <td>http://www.genecards.org/cgi-bin/carddisp.pl?gene={{Transcription_Factor}}</td>
+            <td>{{ Slope }}</td>
+            <td>{{ PVal }}</td>
+            <td><img src="{{images_dir+Transcription_Factor}}"> </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
+
