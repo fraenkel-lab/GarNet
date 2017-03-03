@@ -1,6 +1,13 @@
 ## GarNet 2.0
 
-This repository is in progress. See the issues and projects page for details. -- Mandy and Alex
+This repository is a fast re-write of GarNet, originally written by [Sara Gosline](https://github.com/sgosline) as part of [OmicsIntegrator](https://github.com/fraenkel-lab/omicsintegrator).
+
+[Documentation about each of the functions can be found here.](https://fraenkel-lab.github.io/GarNet2/html/index.html)
+
+TODO (Mandy): Explanantion of mapping peaks, motifs, genes.
+
+TODO (Alex): Information about how to set up code.
+
 
 ---
 
