@@ -35,6 +35,10 @@ handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(
 logger.addHandler(handler)
 
 
+class Options:
+	def __init__(self, options):
+		self.__dict__.update(options)
+
 parser = argparse.ArgumentParser(description="""
 	Scans genome for nearby features within a given window size.
 	If genes and peaks are provided, we map peaks to nearby genes.
@@ -77,7 +81,7 @@ parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=
 if __name__ == '__main__':
 
 	args = parser.parse_args()
-	options = {"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir}
+	options = Options({"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir})
 
 	if args.peaks_file and args.motifs_file and args.known_genes_file:
 		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
@@ -283,25 +287,23 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (dict): options which may come from the argument parser.
+		options (Options): options which may come from the argument parser.
 
 	Returns:
 		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
 			with the restriction that these motifs and genes must have been found near a peak.
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options['output_dir'])
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options['output_dir'])
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.output_dir)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
 
 	peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
 
-	motifs_and_genes = [{**motif, **gene} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
+	motifs_and_genes = [{**motif, **gene, **peak} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
 
-	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd"]
+	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
-
-	## TODO: compute statistics & add fields
 
 	return motifs_and_genes
 
@@ -311,26 +313,25 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		options (dict): options which may come from the argument parser.
+		options (Options): options which may come from the argument parser.
 
 	Returns:
 		dataframe: A dataframe listing peaks and nearby genes
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options['output_dir'])
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.output_dir)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
 
 	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference)
 
-	peaks_and_genes = [{**peak, **gene} for peak, gene in peaks_with_associated_genes]
+	peaks_and_genes = pd.DataFrame.from_records([{**peak, **gene} for peak, gene in peaks_with_associated_genes])
 
-	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "geneName", "geneStart", "geneEnd"]
-	peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes, columns=columns_to_output)
-	# peaks_and_genes = pd.DataFrame.from_records(peaks_and_genes)
+	peaks_and_genes['distance'] = abs((peaks_and_genes['peakStart'] + peaks_and_genes['peakEnd'])/2 - peaks_and_genes['geneStart'])
+	peaks_and_genes['type'] = peaks_and_genes.apply(type_of_peak, axis=1)  # upstream/promoter/downstream/intergenic
 
-	## TODO: compute statistics & add fields
+	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "geneName", "geneStart", "geneEnd", "distance", "type"]
 
-	return peaks_and_genes
+	return peaks_and_genes[columns_to_output]
 
 
 def map_motifs_to_peaks(motifs_file, peaks_file, options):
@@ -338,14 +339,14 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (dict): options which may come from the argument parser.
+		options (Options): options which may come from the argument parser.
 
 	Returns:
 		dataframe: A dataframe listing peaks and nearby transcription factor binding motifs
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options['output_dir'])
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options['output_dir'])
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.output_dir)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
 
 	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs)
 
@@ -353,8 +354,6 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 
 	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifID", "motifName", "motifStart", "motifEnd", "motifScore"]
 	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs, columns=columns_to_output)
-
-	## TODO: compute statistics & add fields
 
 	return peaks_and_motifs
 
@@ -364,14 +363,14 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (dict): options which may come from the argument parser.
+		options (Options): options which may come from the argument parser.
 
 	Returns:
 		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
 	"""
 
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options['output_dir'])
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options['output_dir'])
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
 
 	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
 
@@ -380,7 +379,7 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
-	## TODO: compute statistics & add fields
+	peaks_and_genes['distance'] = peaks_and_genes['motifStart'] - peaks_and_genes['geneStart']
 
 	return motifs_and_genes
 
@@ -395,8 +394,6 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 		dataframe: slope and pval of linear regfression for each transcription factor.
 	"""
 
-	output_dir = options.get('output_dir')
-
 	expression_dataframe = parse_expression_file(expression_file)
 
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneSymbol', right_on='name', how='inner')
@@ -407,21 +404,21 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
-	logger.info("Performing linear regression on "+ str(len(TFs_and_associated_expression_profiles)) +" transcription factor expression profiles...")
+	logger.info("Performing linear regression on "+str(len(TFs_and_associated_expression_profiles))+" transcription factor expression profiles...")
 
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
 
+		# Occasionally there's only one gene associated with a TF, which we can't fit a line to.
+		if len(expression_profile) < 2: continue
+
 		# Ordinary Least Squares linear regression
-		# Check if there are sufficient samples for regression
-		if expression_profile.shape[0] > 2:
-			result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
+		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-			# This doesn't work for me rn
-			if output_dir:
-				plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-				plot.savefig(output_dir + 'regression_plots/' + filename + '.png')
+		if options.output_dir:
+			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+			plot.savefig(output_dir + 'regression_plots/' + TF_name + '.png')
 
-			imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
+		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])
 
@@ -461,7 +458,7 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 	"""
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		options (dict): options which may come from the argument parser.
+		options (Options): options which may come from the argument parser.
 
 	Returns:
 		dict: dictionary of chromosome to IntervalTree of known genes
@@ -524,6 +521,30 @@ def group_by_chromosome(dataframe):
 	return dict(list(dataframe.groupby('chrom')))
 
 
+def type_of_peak(row):
+	"""
+	Arguments:
+		row (pd.Series): A row of data from a dataframe with peak and gene information
+
+	Returns:
+		str: a name for the relationship between the peak and the gene:
+				- upstream if the start of the peak is more than 2kb above the start of the gene
+				- promoter if the start of the peak is above the start of the gene
+				- downstream if the start of the peak is below the start of the gene
+	"""
+
+	if row['geneStrand'] == '+':
+		if -2000 >= row['peakStart'] - row['geneStart']: 	return 'upstream'
+		if -2000 < row['peakStart'] - row['geneStart'] < 0: return 'promoter'
+		if 0 <= row['peakStart'] - row['geneStart']: 		return 'downstream'  # a.k.a. row['peakStart'] < row['geneStart']
+		return 'intergenic'
+	if row['geneStrand'] == '-':
+		if 2000 <= row['peakEnd'] - row['geneEnd']: 	return 'upstream'
+		if 2000 > row['peakEnd'] - row['geneEnd'] > 0: 	return 'promoter'
+		if 0 >= row['peakEnd'] - row['geneEnd']: 		return 'downstream'  # a.k.a. row['peakEnd'] < row['geneEnd']
+		return 'intergenic'
+
+
 def IntervalTree_from_peaks(peaks):
 	"""
 	Arguments:
@@ -544,7 +565,7 @@ def IntervalTree_from_reference(reference, options):
 	"""
 	Arguments:
 		reference (dataframe): Must be a dataframe with `strand`, `geneStart`, and `geneEnd` columns
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool}
+		options (Options): {"upstream_window": int, "downstream_window": int, "tss": bool}
 
 	Returns:
 		IntervalTree: of genes from the reference
