@@ -27,6 +27,9 @@ __all__ = [ "map_known_genes_and_motifs_to_peaks",
 			"TF_regression"]
 
 
+templateLoader = jinja2.FileSystemLoader(searchpath=".")
+templateEnv = jinja2.Environment(loader=templateLoader)
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
@@ -34,8 +37,6 @@ handler.setLevel(logging.INFO)
 handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(message)s', "%I:%M:%S"))
 logger.addHandler(handler)
 
-templateLoader = jinja2.FileSystemLoader(searchpath="/")
-templateEnv = jinja2.Environment(loader=templateLoader)
 
 class Options:
 	def __init__(self, options):
@@ -185,7 +186,7 @@ def parse_peaks_file(filepath_or_file_object):
 
 	# if peaks file format is MACS
 
-    # peaks_fieldnames = ["chr", "start", "end", "length", "summit", "tags", "-10*log10(pvalue)", "fold_enrichment FDR(%)"]
+	# peaks_fieldnames = ["chr", "start", "end", "length", "summit", "tags", "-10*log10(pvalue)", "fold_enrichment FDR(%)"]
 
 	# if peaks file format is GEM
 
@@ -403,6 +404,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	# the same geneSymbol might have different names but since the expression is geneSymbol-wise
 	# these additional names cause bogus regression p-values. Get rid of them here.
 	motifs_genes_and_expression_levels.drop_duplicates(subset=['geneSymbol', 'motifID'], inplace=True)
+	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
@@ -411,14 +413,15 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
 
 		# Occasionally there's only one gene associated with a TF, which we can't fit a line to.
-		if len(expression_profile) < 2: continue
+		if len(expression_profile) < 5: continue
 
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-		if options.output_dir:
-			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			plot.savefig(options.output_dir + 'regression_plots/' + TF_name + '.png')
+		# if options.output_dir:
+		# 	plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+		# 	if not os.path.exists(options.output_dir+'regression_plots/'): os.makedirs(options.output_dir+'regression_plots/')
+		# 	plot.savefig(options.output_dir+'regression_plots/' + TF_name + '.png')
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
@@ -426,8 +429,8 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
 	if options.output_dir:
-		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options.output_dir+'regression_plots/', TFs=imputed_TF_features)
-		with open(options.output_dir+"summary.html", "wb") as summary_output_file:
+		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options.output_dir+'regression_plots/', TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
+		with open(options.output_dir+"summary.html", "w") as summary_output_file:
 		    summary_output_file.write(html_output)
 
 	return imputed_TF_features_dataframe
