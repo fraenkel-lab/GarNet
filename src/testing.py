@@ -15,7 +15,7 @@ peaks = "../example/wgEncodeUWDukeDnaseA549.fdr01peaks.hg19.bed"
 # motifs = "../data/HUMAN_hg19_BBLS_1_00_FDR_0_10.bed"
 
 kgXref = "../data/ucsc_hg19_kgXref.tsv"
-expression = "../data/Tgfb_exp.tsv"
+expression = "../example/Tgfb_exp.tsv"
 
 # peaks = "../data/peaks_IntervalTree_dictionary.pickle"
 reference = "../data/reference_IntervalTree_dictionary.pickle"
