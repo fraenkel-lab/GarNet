@@ -9,8 +9,7 @@ setup(
     url='https://github.com/fraenkel-lab/GarNet2',
     classifiers=[
         'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7'],
+        'Programming Language :: Python :: 3.6'],
     license='GNU General Public License',
     author='zfrenchee',
     author_email='alex@lenail.org',
