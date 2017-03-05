@@ -418,10 +418,10 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-		# if options.output_dir:
-		# 	plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-		# 	if not os.path.exists(options.output_dir+'regression_plots/'): os.makedirs(options.output_dir+'regression_plots/')
-		# 	plot.savefig(options.output_dir+'regression_plots/' + TF_name + '.png')
+		if options.output_dir:
+			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+			if not os.path.exists(options.output_dir+'regression_plots/'): os.makedirs(options.output_dir+'regression_plots/')
+			plot.savefig(options.output_dir+'regression_plots/' + TF_name + '.png')
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
