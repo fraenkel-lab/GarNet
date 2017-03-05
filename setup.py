@@ -20,6 +20,7 @@ setup(
         "pandas",
         "statsmodels",
         "matplotlib",
-        "intervaltree"
+        "intervaltree",
+        "jinja2"
     ],
 )
