@@ -102,7 +102,7 @@ if __name__ == '__main__':
 	elif args.known_genes_file and args.motifs_file:
 		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir)
 
-	else: raise InvalidCommandLineArgs()
+	else: raise Exception('GarNet requires at least two files, some combination of [known genes, motifs, peaks] or all three. GarNet --help for more.')
 
 
 
@@ -310,11 +310,16 @@ def output(dataframe, output_dir):
 
 def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_file, options):
 	"""
+	Find motifs and associated genes local to peaks.
+
+	This function searches for motifs "under" peaks from an epigenomics dataset and "around" peaks for genes.
+	It then returns all pairs of motifs and genes which were found local to peaks.
+
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): options which may come from the argument parser.
+		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
 		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
@@ -337,10 +342,15 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 
 def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 	"""
+	Find all genes nearby to peaks.
+
+	This function searches in the neighborhood of peaks for genes and returns each peak / gene pair
+	which were found to be local to one another.
+
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		options (Options): options which may come from the argument parser.
+		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
 		dataframe: A dataframe listing peaks and nearby genes
@@ -363,10 +373,14 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 
 def map_motifs_to_peaks(motifs_file, peaks_file, options):
 	"""
+	Find known transcription factor binding motifs motifs "below" input epigenetic peaks.
+
+	This function searches for overlap of motifs and peaks, and returns peak / motif pairs.
+
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): options which may come from the argument parser.
+		options (Options): Options({"output_dir": string (optional)})
 
 	Returns:
 		dataframe: A dataframe listing peaks and nearby transcription factor binding motifs
@@ -387,10 +401,14 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 
 def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 	"""
+	Associate genes local to motifs with those motifs, without peak information.
+
+	This function searches for overlap of motifs and genes, and returns motif / gene pairs.
+
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): options which may come from the argument parser.
+		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
 		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
@@ -413,9 +431,18 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 
 def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	"""
+	Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.
+
+	This function parses an expression file of two columns: gene symbol and expression value, and
+	merges the expression profile into the motifs and genes file, resulting in information about
+	transcription factor binding motifs local to genes, and those genes' expressions. We do linear
+	regression, and if an output directory is provided, we output a plot for each TF and an html
+	summary of the regressions.
+
 	Arguments:
 		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
 		expression_file (str or FILE): a tsv file of expression data, with geneSymbol, score columns
+		options (Options): Options({"output_dir": string (optional)})
 
 	Returns:
 		dataframe: slope and pval of linear regfression for each transcription factor.
@@ -483,8 +510,9 @@ def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 	logger.info('  - Parse complete, constructing IntervalTrees...')
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks.items()}
 
-	logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-	save_as_pickled_object(peaks, output_dir + 'peaks_IntervalTree_dictionary.pickle')
+	if output_dir:
+		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
+		save_as_pickled_object(peaks, output_dir + 'peaks_IntervalTree_dictionary.pickle')
 
 	return peaks
 
@@ -511,8 +539,9 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 	logger.info('  - Parse complete, constructing IntervalTrees...')
 	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference.items()}
 
-	logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-	save_as_pickled_object(reference, output_dir + 'reference_IntervalTree_dictionary.pickle')
+	if output_dir:
+		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
+		save_as_pickled_object(reference, output_dir + 'reference_IntervalTree_dictionary.pickle')
 
 	return reference
 
@@ -538,8 +567,9 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file, output_dir):
 	logger.info('  - Parse complete, constructing IntervalTrees...')
 	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs.items()}
 
-	logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-	save_as_pickled_object(motifs, output_dir + 'motifs_IntervalTree_dictionary.pickle')
+	if output_dir:
+		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
+		save_as_pickled_object(motifs, output_dir + 'motifs_IntervalTree_dictionary.pickle')
 
 	return motifs
 
@@ -694,24 +724,5 @@ def intersection_of_three_dicts_of_intervaltrees(A, B, C):
 							 [c.data for c in C[key].search(a)] ) for key in common_keys for a in A[key]]
 
 	return intersection
-
-
-########################################### Error Logic ###########################################
-
-
-class Error(Exception):
-	def __init__(self, message):
-		self.message = message
-	def __str__(self):
-		return self.message
-
-
-class InvalidCommandLineArgs(Error):
-	def __init__(self, args):
-		pass
-		# initialize super with a generic message
-
-
-########################################## Testing Logic ##########################################
 
 

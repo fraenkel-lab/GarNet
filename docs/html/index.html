@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8">
     
-    <title>Welcome to GarNet’s documentation! &mdash; GarNet 2.0 documentation</title>
+    <title>Welcome to GarNet’s technical documentation! &mdash; GarNet 2.0 documentation</title>
     
     <link rel="stylesheet" type="text/css" href="_static/css/spc-bootstrap.css">
     <link rel="stylesheet" type="text/css" href="_static/css/spc-extend.css">
@@ -61,12 +61,32 @@
         <div class="bodywrapper">
           <div class="body" id="spc-section-body">
             
-  <div class="section" id="module-garnet">
-<span id="welcome-to-garnet-s-documentation"></span><h1>Welcome to GarNet&#8217;s documentation!<a class="headerlink" href="#module-garnet" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
+  <div class="section" id="welcome-to-garnet-s-technical-documentation">
+<h1>Welcome to GarNet&#8217;s technical documentation!<a class="headerlink" href="#welcome-to-garnet-s-technical-documentation" title="Permalink to this headline">¶</a></h1>
+<p>GarNet is an epigenomics data exploration tool. For more information about the scientific uses of GarNet,
+please see the <a class="reference external" href="https://github.com/fraenkel-lab/GarNet">Readme</a>. To report an error, please refer to the <a class="reference external" href="https://github.com/fraenkel-lab/GarNet/issues">Issues</a>.</p>
+<p>Some important notes:</p>
+<ul class="simple">
+<li>GarNet uses tab-delimited files, otherwise known as tsv&#8217;s. BED files are already tsv, so no worries there.</li>
+<li>GarNet saves intermediate files for all input datasets, which it can use instead of raw tsv&#8217;s saving computation and time. Those are pickled IntervalTrees (files which end in .pickle)</li>
+<li>We&#8217;ve supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.</li>
+<li>GarNet uses an Options class for all parameters. This little snipped gives you a dict whose members you can access with . instead of []</li>
+</ul>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li>The options mentioned in the following documentation are expected as Options objects, with the fields mentioned included.</li>
+</ul>
+<span class="target" id="module-garnet"></span><dl class="function">
 <dt id="garnet.map_known_genes_and_motifs_to_peaks">
 <code class="descclassname">garnet.</code><code class="descname">map_known_genes_and_motifs_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_and_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_and_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Find motifs and associated genes local to peaks.</p>
+<p>This function searches for motifs &#8220;under&#8221; peaks from an epigenomics dataset and &#8220;around&#8221; peaks for genes.
+It then returns all pairs of motifs and genes which were found local to peaks.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
@@ -74,7 +94,7 @@
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -96,14 +116,17 @@
 <dl class="function">
 <dt id="garnet.map_known_genes_to_peaks">
 <code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Find all genes nearby to peaks.</p>
+<p>This function searches in the neighborhood of peaks for genes and returns each peak / gene pair
+which were found to be local to one another.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -120,14 +143,16 @@
 <dl class="function">
 <dt id="garnet.map_motifs_to_peaks">
 <code class="descclassname">garnet.</code><code class="descname">map_motifs_to_peaks</code><span class="sig-paren">(</span><em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Find known transcription factor binding motifs motifs &#8220;below&#8221; input epigenetic peaks.</p>
+<p>This function searches for overlap of motifs and peaks, and returns peak / motif pairs.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -144,14 +169,16 @@
 <dl class="function">
 <dt id="garnet.map_known_genes_to_motifs">
 <code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_motifs</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_motifs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_motifs" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dd><p>Associate genes local to motifs with those motifs, without peak information.</p>
+<p>This function searches for overlap of motifs and genes, and returns motif / gene pairs.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -166,15 +193,22 @@
 </dd></dl>
 
 <dl class="function">
-<dt id="garnet.motif_regression">
-<code class="descclassname">garnet.</code><code class="descname">motif_regression</code><span class="sig-paren">(</span><em>motifs_and_genes_dataframe</em>, <em>expression_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#motif_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.motif_regression" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<dt id="garnet.TF_regression">
+<code class="descclassname">garnet.</code><code class="descname">TF_regression</code><span class="sig-paren">(</span><em>motifs_and_genes_dataframe</em>, <em>expression_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#TF_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.TF_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.</p>
+<p>This function parses an expression file of two columns: gene symbol and expression value, and
+merges the expression profile into the motifs and genes file, resulting in information about
+transcription factor binding motifs local to genes, and those genes&#8217; expressions. We do linear
+regression, and if an output directory is provided, we output a plot for each TF and an html
+summary of the regressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>motifs_and_genes_dataframe</strong> (<em>dataframe</em>) &#8211; the outcome of map_known_genes_and_motifs_to_peaks</li>
 <li><strong>expression_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; a tsv file of expression data, with geneSymbol, score columns</li>
+<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
