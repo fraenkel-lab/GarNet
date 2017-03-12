@@ -16,30 +16,42 @@ To determine which TFs were relevant to a biological system, users should supply
 
 If a Transcription Factor binding motif is found near genes changing in expression, inside relevant epigenetic regions in this tissue type, and changes in gene expression are significantly dependent on the strength of that motif, we predict that the TF is likely an important player in the gene expression in your system. We assign a score to that TF based on the significance and slope of the regression of motif strength on gene expression.
 
-[Documentation about each of the functions can be found here.](https://fraenkel-lab.github.io/GarNet2/html/index.html)
 
-TODO (Alex): Information about how to set up code.
+## Setup
 
+GarNet is a python3 package [available via pypi](https://pypi.python.org/pypi/GarNet). So a simple
+
+```
+pip3 install garnet
+```
+```
+from GarNet import *
+```
+
+should suffice. GarNet depends on numpy, pandas, scipy, statsmodels, matplotlib, and [IntervalTree](https://github.com/chaimleib/intervaltree).
+
+
+## Documentataion
+
+GarNet has 5 public methods:
+
+- **`map_known_genes_to_peaks`** which finds nearby genes to each of the peaks.
+- **`map_motifs_to_peaks`** which finds nearby motifs to each of the peaks
+- **`map_known_genes_and_motifs_to_peaks`** which gives you back all pairs of genes and motifs local to the same peaks
+- **`map_known_genes_to_motifs`** which simply finds genes near motifs
+- **`motif_regression`** which, given a set of motifs and genes from either of the previous two functions as well as an expression profile, will
+
+
+[Specific documentation about each of the functions can be found here.](https://fraenkel-lab.github.io/GarNet2/html/index.html)
+
+
+## Acknowledgements
 
 This repository is an updated version of Garnet, originally written by [Sara Gosline](https://github.com/sgosline) and Anthony Soltis as part of [OmicsIntegrator](https://github.com/fraenkel-lab/omicsintegrator).
 
+This repository depends heavily on [pandas](http://pandas.pydata.org/) and [IntervalTree](https://github.com/chaimleib/intervaltree).
 
----
-
-#### Notes to ourselves:
-
-Alternative IntervalTree implementations:
-
-- https://gist.github.com/shoyer/c939325f509d7c027949 (keep an eye on https://github.com/pandas-dev/pandas/pull/8707 which has now moved to https://github.com/pandas-dev/pandas/pull/15309)
-- https://github.com/ekg/intervaltree
-- https://github.com/cpcloud/banyan
-
-
-Things worth reading at some point:
-
-- http://chrisalbon.com/python/pandas_apply_operations_to_dataframes.html
-- http://fastinterval.readthedocs.io/en/latest/
-
+We're very thankful for access to [MotifMap](http://motifmap-rna.ics.uci.edu/) and [RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) for our motif and genome data, upon which our analyses depend.
 
 
 
