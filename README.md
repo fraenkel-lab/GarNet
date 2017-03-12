@@ -28,7 +28,7 @@ pip3 install garnet
 from GarNet import *
 ```
 
-should suffice. GarNet depends on numpy, pandas, statsmodels, matplotlib, and [IntervalTree](https://github.com/chaimleib/intervaltree).
+should suffice. GarNet depends on numpy, pandas, statsmodels, and [IntervalTree](https://github.com/chaimleib/intervaltree). (and matplotlib and jinja2 for figures and reports)
 
 
 ## Documentataion
