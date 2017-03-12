@@ -44,10 +44,10 @@ class Options:
 
 parser = argparse.ArgumentParser(description="""
 	Scans genome for nearby features within a given window size.
-	If genes and peaks are provided, we map peaks to nearby genes.
-	If genes and motif locations are provided, we map motifs to nearby genes.
+	If genes and peaks are provided, we find genes local to peaks.
+	If genes and motif locations are provided, we map genes local to motifs.
 	If peaks and motif locations are provided, we map motifs to nearby peaks.
-	If all three are provided, we map genes to peaks, and map motifs to peaks.
+	If all three are provided, we map motifs and genes to peaks, and return those motifs and genes.
 """)
 
 class FullPaths(argparse.Action):

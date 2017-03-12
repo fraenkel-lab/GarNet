@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='GarNet',
-    version='0.2.1',
+    version='0.2.2',
     packages=['GarNet'],
     package_dir={'GarNet': 'src'},
     scripts=['src/garnet.py'],
