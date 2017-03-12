@@ -2,11 +2,11 @@ from distutils.core import setup
 
 setup(
     name='GarNet',
-    version='0.2.0',
+    version='0.2.1',
     packages=['GarNet'],
     package_dir={'GarNet': 'src'},
     scripts=['src/garnet.py'],
-    url='https://github.com/fraenkel-lab/GarNet2',
+    url='https://github.com/fraenkel-lab/GarNet',
     classifiers=[
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'],
