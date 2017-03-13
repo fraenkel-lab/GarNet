@@ -214,7 +214,7 @@ def parse_motifs_file(filepath_or_file_object):
 	# motif_dataframe['motifID'], motif_dataframe['motifName'] = motif_dataframe['name'].str.split('=', 1).str
 
 	# motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
-	motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "BBLS":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
+	motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
 
 	return motif_dataframe
 
