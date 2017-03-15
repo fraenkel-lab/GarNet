@@ -2,10 +2,9 @@ from distutils.core import setup
 
 setup(
     name='GarNet',
-    version='0.2.2',
     packages=['GarNet'],
     package_dir={'GarNet': 'src'},
-    scripts=['src/garnet.py'],
+    version='0.2.3',
     url='https://github.com/fraenkel-lab/GarNet',
     classifiers=[
         'Programming Language :: Python :: 3.5',
