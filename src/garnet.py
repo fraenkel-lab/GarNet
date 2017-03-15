@@ -89,19 +89,19 @@ if __name__ == '__main__':
 
 	if args.peaks_file and args.motifs_file and args.known_genes_file:
 		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
-		output(result_dataframe, args.output_dir)
+		output(result_dataframe, args.output_dir, args.peaks_file+'.garnet')
 
 		if args.expression_file:
-			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir)
+			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes')
 
 	elif args.peaks_file and args.known_genes_file:
-		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir)
+		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir, args.peaks_file+'.garnet')
 
 	elif args.peaks_file and args.motifs_file:
-		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, options), args.output_dir)
+		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, options), args.output_dir, args.peaks_file+'.garnet')
 
 	elif args.known_genes_file and args.motifs_file:
-		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir)
+		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir, args.motifs_file+'.garnet')
 
 	else: raise Exception('GarNet requires at least two files, some combination of [known genes, motifs, peaks] or all three. GarNet --help for more.')
 
@@ -261,16 +261,16 @@ def try_to_load_as_pickled_object_or_None(filepath):
 	return obj
 
 
-def output(dataframe, output_dir):
+def output(dataframe, output_dir, filename):
 	"""
 	Arguments:
 		dataframe (dataframe): the principal result of the analysis we want to write out as a csv.
 		output_dir (str): the fullpath of a directory we will write our output to.
 	"""
 
-	logger.info('Writing output file')
+	logger.info('Writing output file '+filename)
 
-	dataframe.to_csv(output_dir + 'output', sep='\t', header=True, index=False)
+	dataframe.to_csv(output_dir+filename, sep='\t', header=True, index=False)
 
 
 ######################################### Public Functions #########################################
@@ -452,6 +452,42 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 			summary_output_file.write(html_output)
 
 	return imputed_TF_features_dataframe
+
+
+def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_file, options):
+	"""
+	Scan each peak file for nearby motifs and genes, in the same manner as map_known_genes_and_motifs_to_peaks
+
+	This function principally removes the overhead of loading and unloading and re-loading
+	motifs intervaltrees and reference intervaltrees from memory, which is the most time-intensive
+	operation in this package. Each of the other functions in this package is targeted towards
+	individual samples, but if you receive many peaks files at once, it makes sense to analyze them
+	all in one fell swoop.
+	This function cannot be called from the CLI defined by the ArgParser above.
+	This function writes resulting files to the specified output_dir.
+
+	Arguments:
+		list_of_peaks_files (list): a list of filepaths associated with epigenomics files
+		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		motifs_file (str or FILE): filepath or file object for the motifs file
+		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+	"""
+
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
+
+	for peaks_file in list_of_peaks_files:
+
+		peaks = dict_of_IntervalTree_from_peak_file(peaks_file, None)
+
+		peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
+
+		motifs_and_genes = [{**motif, **gene, **peak} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
+
+		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
+		motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
+
+		output(motifs_and_genes, options.output_dir, peaks_file + '.garnet')
 
 
 ######################################## Private Functions ########################################
