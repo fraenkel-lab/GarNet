@@ -4,7 +4,8 @@ setup(
     name='GarNet',
     packages=['GarNet'],
     package_dir={'GarNet': 'src'},
-    version='0.2.3',
+    data_files=[('', 'summary.jinja')],
+    version='0.2.9',
     url='https://github.com/fraenkel-lab/GarNet',
     classifiers=[
         'Programming Language :: Python :: 3.5',
@@ -14,11 +15,11 @@ setup(
     author_email='alex@lenail.org',
     description='',
     install_requires=[
-        "numpy",
-        "pandas",
-        "statsmodels",
-        "matplotlib",
-        "intervaltree",
-        "jinja2"
+        'numpy',
+        'pandas',
+        'statsmodels',
+        'matplotlib',
+        'intervaltree',
+        'jinja2'
     ],
 )
