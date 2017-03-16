@@ -270,7 +270,7 @@ def output(dataframe, output_dir, filename):
 
 	logger.info('Writing output file '+filename)
 
-	dataframe.to_csv(output_dir+filename, sep='\t', header=True, index=False)
+	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
 
 
 ######################################### Public Functions #########################################
