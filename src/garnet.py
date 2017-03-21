@@ -207,7 +207,7 @@ def parse_motifs_file(filepath_or_file_object):
 		dataframe: motif dataframe
 	"""
 
-	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chromosome","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
 	# motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
 	# motif_fieldnames = ["motifName", "chrom", "motifStrand", "motifScore", "motifStart", "motifEnd"]
 
@@ -479,6 +479,7 @@ def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_f
 
 	for peaks_file in list_of_peaks_files:
 
+		logger.info(peaks_file)
 		peaks = dict_of_IntervalTree_from_peak_file(peaks_file, None)
 
 		peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
