@@ -48,12 +48,7 @@
 	      <div class="row-fluid">
 		<div class="span9">
   		  <div class="spc-navbar">
-		    
-    <ul class="nav nav-pills pull-left">
-        <li class="active"><a href="["></a></li>
-        <li class="active"><a href="]"></a></li>
-	 
-    </ul>
+		    <generator object macro at 0x111c93bf8>
 		  </div>
 		</div>
 	      </div>
@@ -70,15 +65,6 @@ please see the <a class="reference external" href="https://github.com/fraenkel-l
 <li>GarNet uses tab-delimited files, otherwise known as tsv&#8217;s. BED files are already tsv, so no worries there.</li>
 <li>GarNet saves intermediate files for all input datasets, which it can use instead of raw tsv&#8217;s saving computation and time. Those are pickled IntervalTrees (files which end in .pickle)</li>
 <li>We&#8217;ve supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.</li>
-<li>GarNet uses an Options class for all parameters. This little snipped gives you a dict whose members you can access with . instead of []</li>
-</ul>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Options</span><span class="p">:</span>
-        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li>The options mentioned in the following documentation are expected as Options objects, with the fields mentioned included.</li>
 </ul>
 <span class="target" id="module-garnet"></span><dl class="function">
 <dt id="garnet.map_known_genes_and_motifs_to_peaks">
@@ -94,7 +80,7 @@ It then returns all pairs of motifs and genes which were found local to peaks.</
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -126,7 +112,7 @@ which were found to be local to one another.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -152,7 +138,7 @@ which were found to be local to one another.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -178,7 +164,7 @@ which were found to be local to one another.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -208,7 +194,7 @@ summary of the regressions.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>motifs_and_genes_dataframe</strong> (<em>dataframe</em>) &#8211; the outcome of map_known_genes_and_motifs_to_peaks</li>
 <li><strong>expression_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; a tsv file of expression data, with geneSymbol, score columns</li>
-<li><strong>options</strong> (<em>Options</em>) &#8211; Options({&#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
 </tr>
@@ -216,6 +202,33 @@ summary of the regressions.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.batch_scan_epigenomics_files">
+<code class="descclassname">garnet.</code><code class="descname">batch_scan_epigenomics_files</code><span class="sig-paren">(</span><em>list_of_peaks_files</em>, <em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#batch_scan_epigenomics_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.batch_scan_epigenomics_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan each peak file for nearby motifs and genes, in the same manner as map_known_genes_and_motifs_to_peaks</p>
+<p>This function principally removes the overhead of loading and unloading and re-loading
+motifs intervaltrees and reference intervaltrees from memory, which is the most time-intensive
+operation in this package. Each of the other functions in this package is targeted towards
+individual samples, but if you receive many peaks files at once, it makes sense to analyze them
+all in one fell swoop.
+This function cannot be called from the CLI defined by the ArgParser above.
+This function writes resulting files to the specified output_dir.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>list_of_peaks_files</strong> (<em>list</em>) &#8211; a list of filepaths associated with epigenomics files</li>
+<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
+<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
+</ul>
 </td>
 </tr>
 </tbody>

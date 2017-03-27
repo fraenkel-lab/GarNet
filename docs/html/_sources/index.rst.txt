@@ -15,16 +15,6 @@ Some important notes:
 
 - We've supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.
 
-- GarNet uses an Options class for all parameters. This little snipped gives you a dict whose members you can access with . instead of []
-
-::
-
-	class Options:
-		def __init__(self, options):
-			self.__dict__.update(options)
-
-- The options mentioned in the following documentation are expected as Options objects, with the fields mentioned included.
-
 
 .. automodule:: garnet
 	:members:
