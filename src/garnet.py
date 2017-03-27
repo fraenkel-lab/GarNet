@@ -24,7 +24,7 @@ __all__ = [ "map_known_genes_and_motifs_to_peaks",
 			"map_motifs_to_peaks",
 			"map_known_genes_to_motifs",
 			"TF_regression",
-			"batch_scan_epigenomics_files"]
+			"batch_scan_epigenomics_files" ]
 
 
 templateLoader = jinja2.FileSystemLoader(searchpath=".")
@@ -148,10 +148,11 @@ def parse_expression_file(filepath_or_file_object):
 	return pd.read_csv(filepath_or_file_object, delimiter='\t', names=["name", "expression"])
 
 
-def save_as_pickled_object(obj, filepath):
+def save_as_pickled_object(obj, directory, filename):
 	"""
 	This is a defensive way to write pickle.write, allowing for very large files on all platforms
 	"""
+	filepath = os.path.join(directory, filename)
 	max_bytes = 2**31 - 1
 	bytes_out = pickle.dumps(obj)
 	n_bytes = sys.getsizeof(bytes_out)
@@ -354,8 +355,8 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 		if options.get('output_dir'):
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			if not os.path.exists(options.get('output_dir')+'regression_plots/'): os.makedirs(options.get('output_dir')+'regression_plots/')
-			plot.savefig(options.get('output_dir')+'regression_plots/' + TF_name + '.png')
+			if not os.path.exists(options['output_dir']+'regression_plots/'): os.makedirs(options['output_dir']+'regression_plots/')
+			plot.savefig(options['output_dir']+'regression_plots/' + TF_name + '.png')
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
@@ -432,7 +433,7 @@ def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 
 	if output_dir:
 		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-		save_as_pickled_object(peaks, output_dir + 'peaks_IntervalTree_dictionary.pickle')
+		save_as_pickled_object(peaks, output_dir, 'peaks_IntervalTree_dictionary.pickle')
 
 	return peaks
 
@@ -461,7 +462,7 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 
 	if output_dir:
 		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-		save_as_pickled_object(reference, output_dir + 'reference_IntervalTree_dictionary.pickle')
+		save_as_pickled_object(reference, output_dir, 'reference_IntervalTree_dictionary.pickle')
 
 	return reference
 
@@ -489,7 +490,7 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file, output_dir):
 
 	if output_dir:
 		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-		save_as_pickled_object(motifs, output_dir + 'motifs_IntervalTree_dictionary.pickle')
+		save_as_pickled_object(motifs, output_dir, 'motifs_IntervalTree_dictionary.pickle')
 
 	return motifs
 
