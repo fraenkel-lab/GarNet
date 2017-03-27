@@ -5,7 +5,6 @@ import sys
 import os
 
 # Peripheral python modules
-import argparse
 import pickle
 import logging
 
@@ -25,8 +24,7 @@ __all__ = [ "map_known_genes_and_motifs_to_peaks",
 			"map_motifs_to_peaks",
 			"map_known_genes_to_motifs",
 			"TF_regression",
-			"batch_scan_epigenomics_files",
-			"Options"]
+			"batch_scan_epigenomics_files"]
 
 
 templateLoader = jinja2.FileSystemLoader(searchpath=".")
@@ -40,74 +38,6 @@ handler.setFormatter(logging.Formatter('%(asctime)s - GarNet: %(levelname)s - %(
 logger.addHandler(handler)
 
 
-class Options:
-	def __init__(self, options):
-		self.__dict__.update(options)
-
-parser = argparse.ArgumentParser(description="""
-	Scans genome for nearby features within a given window size.
-	If genes and peaks are provided, we find genes local to peaks.
-	If genes and motif locations are provided, we map genes local to motifs.
-	If peaks and motif locations are provided, we map motifs to nearby peaks.
-	If all three are provided, we map motifs and genes to peaks, and return those motifs and genes.
-""")
-
-class FullPaths(argparse.Action):
-	"""Expand user- and relative-paths"""
-	def __call__(self, parser, namespace, values, option_string=None):
-		setattr(namespace, self.dest, os.path.abspath(os.path.expanduser(values)))
-
-def directory(dirname):
-	if not os.path.isdir(dirname): raise argparse.ArgumentTypeError(dirname + " is not a directory")
-	else: return dirname
-
-parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
-	help='BED file containing epigenetic regions of interest')  # Add future file formats as we support them
-parser.add_argument('-m', '--motifs', dest='motifs_file', type=argparse.FileType('r'),
-	help='BED file containing locations and scores of TF motifs')
-parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.FileType('r'),
-	help='file containing locations of known genes in the reference genome (i.e. from UCSC Annotation Database)')
-parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
-	help='file containing information about known genes (i.e. from UCSC Annotation Database)')
-parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.FileType('r'),
-	help='')
-
-parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
-	help='window width in base pairs to consider upstream region [default: %default]')
-parser.add_argument('--down', dest='downstream_window', type=int, default=2000,
-	help='window width in base pairs to consider downstream region [default: %default]')
-parser.add_argument('--tss', dest='tss', action='store_true',
-	help='calculate downstream window from transcription start site instead of transcription end site')
-
-parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=directory, required=True,
-	help='output directory path')
-
-
-if __name__ == '__main__':
-
-	args = parser.parse_args()
-	options = Options({"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir})
-
-	if args.peaks_file and args.motifs_file and args.known_genes_file:
-		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
-		output(result_dataframe, args.output_dir, args.peaks_file+'.garnet')
-
-		if args.expression_file:
-			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes')
-
-	elif args.peaks_file and args.known_genes_file:
-		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir, args.peaks_file+'.garnet')
-
-	elif args.peaks_file and args.motifs_file:
-		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, options), args.output_dir, args.peaks_file+'.garnet')
-
-	elif args.known_genes_file and args.motifs_file:
-		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir, args.motifs_file+'.garnet')
-
-	else: raise Exception('GarNet requires at least two files, some combination of [known genes, motifs, peaks] or all three. GarNet --help for more.')
-
-
-
 ######################################## File Parsing Logic #######################################
 
 def parse_known_genes_file(known_genes_filepath_or_file_object, kgXref_filepath_or_file_object_or_None):
@@ -117,19 +47,6 @@ def parse_known_genes_file(known_genes_filepath_or_file_object, kgXref_filepath_
 
 	The known genes file format is the following:
 	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
-
-	`name` varchar(255) NOT NULL DEFAULT '',
-	`chrom` varchar(255) NOT NULL DEFAULT '',
-	`strand` char(1) NOT NULL DEFAULT '',
-	`txStart` int(10) unsigned NOT NULL DEFAULT '0',
-	`txEnd` int(10) unsigned NOT NULL DEFAULT '0',
-	`cdsStart` int(10) unsigned NOT NULL DEFAULT '0',
-	`cdsEnd` int(10) unsigned NOT NULL DEFAULT '0',
-	`exonCount` int(10) unsigned NOT NULL DEFAULT '0',
-	`exonStarts` longblob NOT NULL,
-	`exonEnds` longblob NOT NULL,
-	`proteinID` varchar(40) NOT NULL DEFAULT '',
-	`alignID` varchar(255) NOT NULL DEFAULT '',
 
 	Returns:
 		dataframe: known genes dataframe
@@ -176,8 +93,6 @@ def parse_peaks_file(filepath_or_file_object):
 	# if peaks file format is GEM
 
 	# peaks_fieldnames = ["Location", "IP binding strength", "Control binding strength", "Fold", "Expected binding strength", "Q_-lg10", "P_-lg10", "P_poiss", "IPvsEMP", "Noise", "KmerGroup", "KG_hgp", "Strand"]
-
-
 
 	return peaks_dataframe
 
@@ -287,16 +202,16 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
 		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
 			with the restriction that these motifs and genes must have been found near a peak.
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.output_dir)
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
 
 	peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
 
@@ -318,14 +233,14 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
 		dataframe: A dataframe listing peaks and nearby genes
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.output_dir)
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
 
 	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference)
 
@@ -348,14 +263,14 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 	Arguments:
 		peaks_file (str or FILE): filepath or file object for the peaks file.
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): Options({"output_dir": string (optional)})
+		options (dict): {"output_dir": string (optional)})
 
 	Returns:
 		dataframe: A dataframe listing peaks and nearby transcription factor binding motifs
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.output_dir)
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
+	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
 
 	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs)
 
@@ -376,14 +291,14 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
 		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
 	"""
 
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
 
 	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
 
@@ -410,7 +325,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	Arguments:
 		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
 		expression_file (str or FILE): a tsv file of expression data, with geneSymbol, score columns
-		options (Options): Options({"output_dir": string (optional)})
+		options (dict): {"output_dir": string (optional)})
 
 	Returns:
 		dataframe: slope and pval of linear regfression for each transcription factor.
@@ -437,22 +352,22 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-		if options.output_dir:
+		if options.get('output_dir'):
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			if not os.path.exists(options.output_dir+'regression_plots/'): os.makedirs(options.output_dir+'regression_plots/')
-			plot.savefig(options.output_dir+'regression_plots/' + TF_name + '.png')
+			if not os.path.exists(options.get('output_dir')+'regression_plots/'): os.makedirs(options.get('output_dir')+'regression_plots/')
+			plot.savefig(options.get('output_dir')+'regression_plots/' + TF_name + '.png')
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
-	if options.output_dir:
-		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options.output_dir+'regression_plots/', TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
-		with open(options.output_dir+"summary.html", "w") as summary_output_file:
+	if options.get('output_dir'):
+		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options['output_dir']+'regression_plots/', TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
+		with open(options['output_dir']+"summary.html", "w") as summary_output_file:
 			summary_output_file.write(html_output)
 
-	return imputed_TF_features_dataframe
+	return imputed_TF_features_dataframes
 
 
 def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_file, options):
@@ -471,11 +386,11 @@ def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_f
 		list_of_peaks_files (list): a list of filepaths associated with epigenomics files
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
 		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (Options): Options({"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 	"""
 
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.output_dir)
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.output_dir)
+	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
 
 	for peaks_file in list_of_peaks_files:
 
@@ -489,7 +404,7 @@ def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_f
 		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
 		motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
-		output(motifs_and_genes, options.output_dir, peaks_file + '.garnet')
+		output(motifs_and_genes, options.get('output_dir'), peaks_file + '.garnet')
 
 
 ######################################## Private Functions ########################################
@@ -526,7 +441,7 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 	"""
 	Arguments:
 		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		options (Options): options which may come from the argument parser.
+		options (dict): options which may come from the argument parser.
 
 	Returns:
 		dict: dictionary of chromosome to IntervalTree of known genes
@@ -539,7 +454,7 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 		return reference
 
 	logger.info('  - Known Genes file does not seem to have been generated by pickle, proceeding to parse...')
-	reference = parse_known_genes_file(known_genes_file, options.kgXref_file)
+	reference = parse_known_genes_file(known_genes_file, options.get('kgXref_file'))
 	reference = group_by_chromosome(reference)
 	logger.info('  - Parse complete, constructing IntervalTrees...')
 	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference.items()}
@@ -635,15 +550,15 @@ def IntervalTree_from_reference(reference, options):
 	"""
 	Arguments:
 		reference (dataframe): Must be a dataframe with `strand`, `geneStart`, and `geneEnd` columns
-		options (Options): {"upstream_window": int, "downstream_window": int, "tss": bool}
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool}
 
 	Returns:
 		IntervalTree: of genes from the reference
 	"""
 
-	upstream_window = options.upstream_window
-	downstream_window = options.downstream_window
-	window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site = options.tss
+	upstream_window = options.get('upstream_window') or 2000
+	downstream_window = options.get('downstream_window') or 2000
+	window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site = options.get('tss') or False
 
 	if window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site:
 		starts = reference.apply(lambda x: x.geneStart - upstream_window if x.strand == '+' else x.geneEnd - upstream_window, axis=1)
