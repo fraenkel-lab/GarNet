@@ -338,7 +338,8 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	# the same geneSymbol might have different names but since the expression is geneSymbol-wise
 	# these additional names cause bogus regression p-values. Get rid of them here.
-	motifs_genes_and_expression_levels.drop_duplicates(subset=['geneSymbol', 'motifID'], inplace=True)
+	if 'geneSymbol' in motifs_genes_and_expression_levels.columns:
+		motifs_genes_and_expression_levels.drop_duplicates(subset=['geneSymbol', 'motifID'], inplace=True)
 	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
