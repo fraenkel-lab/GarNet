@@ -7,16 +7,16 @@ import sys
 import argparse
 
 # import this module
-from . import map_known_genes_and_motifs_to_peaks, map_known_genes_to_peaks, map_motifs_to_peaks, map_known_genes_to_motifs, TF_regression, batch_scan_epigenomics_files, Options
+from . import map_known_genes_and_motifs_to_peaks, map_known_genes_to_peaks, map_motifs_to_peaks, map_known_genes_to_motifs, TF_regression
 
 
-parser = argparse.ArgumentParser(description="""
+parser = argparse.ArgumentParser(prog="GarNet", description="""
 	Scans genome for nearby features within a given window size.
 	If genes and peaks are provided, we find genes local to peaks.
 	If genes and motif locations are provided, we map genes local to motifs.
 	If peaks and motif locations are provided, we map motifs to nearby peaks.
 	If all three are provided, we map motifs and genes to peaks, and return those motifs and genes.
-""")
+""", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 class FullPaths(argparse.Action):
 	"""Expand user- and relative-paths"""
@@ -39,9 +39,9 @@ parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.
 	help='')
 
 parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
-	help='window width in base pairs to consider upstream region [default: %default]')
+	help='window width in base pairs to consider upstream region')
 parser.add_argument('--down', dest='downstream_window', type=int, default=2000,
-	help='window width in base pairs to consider downstream region [default: %default]')
+	help='window width in base pairs to consider downstream region')
 parser.add_argument('--tss', dest='tss', action='store_true',
 	help='calculate downstream window from transcription start site instead of transcription end site')
 
@@ -58,7 +58,7 @@ def output(dataframe, output_dir, filename):
 	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
 
 
-if __name__ == '__main__':
+def main():
 
 	args = parser.parse_args()
 	options = {"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir}
@@ -80,3 +80,7 @@ if __name__ == '__main__':
 		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir, args.motifs_file+'.garnet')
 
 	else: raise Exception('GarNet requires at least two files, some combination of [known genes, motifs, peaks] or all three. GarNet --help for more.')
+
+
+if __name__ == '__main__':
+	main()

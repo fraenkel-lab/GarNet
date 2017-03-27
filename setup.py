@@ -1,11 +1,11 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='GarNet',
     packages=['GarNet'],
     package_dir={'GarNet': 'src'},
     package_data={'GarNet': ['summary.jinja']},
-    version='0.2.19',
+    version='0.2.20',
     url='https://github.com/fraenkel-lab/GarNet',
     classifiers=[
         'Programming Language :: Python :: 3.5',
@@ -22,4 +22,8 @@ setup(
         'intervaltree',
         'jinja2'
     ],
+    entry_points={
+        'console_scripts': [ 'GarNet = src.__main__:main' ]
+    },
 )
+
