@@ -18,6 +18,8 @@ from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 from intervaltree import IntervalTree
 import jinja2
 
+import psycopg2
+
 # list of public methods:
 __all__ = [ "map_known_genes_and_motifs_to_peaks",
 			"map_known_genes_to_peaks",
@@ -113,29 +115,6 @@ def parse_kgXref_file(filepath_or_file_object):
 	return kgXref_dataframe
 
 
-def parse_motifs_file(filepath_or_file_object):
-	"""
-	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
-
-	Returns:
-		dataframe: motif dataframe
-	"""
-
-	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
-	# motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
-	# motif_fieldnames = ["motifName", "chrom", "motifStrand", "motifScore", "motifStart", "motifEnd"]
-
-	motif_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=motif_fieldnames)
-
-	# motif_dataframe['motifID'], motif_dataframe['motifName'] = motif_dataframe['name'].str.split('=', 1).str
-
-	# motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
-	motif_dataframe.rename(index=str, columns={"start":"motifStart", "stop":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
-
-	return motif_dataframe
-
-
 def parse_expression_file(filepath_or_file_object):
 	"""
 	Arguments:
@@ -188,6 +167,30 @@ def output(dataframe, output_dir, filename):
 	logger.info('Writing output file '+filename)
 
 	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
+
+
+######################################## Motif Database Functions ##################################
+
+def connect():
+	try:
+		conn = psycopg2.connect("dbname='motifs' host='localhost' password='password' user='postgres'")
+	except:
+		print("I am unable to connect to the database")
+	return conn
+
+
+def query_motifs_DB(cursor, chrom, start, stop):
+	sql = """ SELECT * FROM multiz46way_placental WHERE chromosome = '"{!s}"' and start BETWEEN {!s} and {!s} and stop BETWEEN {!s} and {!s} """.format(chrom, start, stop, start, stop)
+	cursor.execute(sql)
+	x = cursor.fetchall()
+	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+	motifs = []
+	for row in x:
+		motif_result = {}
+		for i in range(0,len(motif_fieldnames)):
+			motif_result[motif_fieldnames[i]] = row[i]
+		motifs.append(motif_result)
+	return motifs
 
 
 ######################################### Public Functions #########################################
@@ -255,7 +258,7 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 	return peaks_and_genes[columns_to_output]
 
 
-def map_motifs_to_peaks(motifs_file, peaks_file, options):
+def map_motifs_to_peaks(peaks_file, options):
 	"""
 	Find known transcription factor binding motifs motifs "below" input epigenetic peaks.
 
@@ -270,15 +273,23 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 		dataframe: A dataframe listing peaks and nearby transcription factor binding motifs
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
+	peaks = parse_peaks_file(peaks_file)
+	conn = connect()
+	cursor = conn.cursor()
+	
+	peaks_and_motifs = []
+	peak_columns_to_keep = ["peakStart","peakEnd","peakName", "peakScore"]
+	for peak in peaks.itertuples():
+		motif_dicts = query_motifs_DB(cursor, peak.chrom, peak.peakStart, peak.peakEnd) 
+		print(motif_dicts)
+		if motif_dicts:
+			for motif in motif_dicts:
+				for col in peak_columns_to_keep:
+					motif[col] = peak._asdict()[col]
+			peaks_and_motifs.append(motif)
 
-	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs)
-
-	peaks_and_motifs = [{**peak, **motif} for peak, motif in peaks_with_associated_motifs]
-
-	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifID", "motifName", "motifStart", "motifEnd", "motifScore"]
-	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs, columns=columns_to_output)
+	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "accession", "name", "start", "stop", "FDR"]
+	peaks_and_motifs = pd.DataFrame(peaks_and_motifs, columns=columns_to_output	)
 
 	return peaks_and_motifs
 
