@@ -137,7 +137,7 @@ def save_as_pickled_object(obj, output_dir, filename):
 	"""
 	This is a defensive way to write pickle.write, allowing for very large files on all platforms
 	"""
-	filepath = os.path.join(directory, filename)
+	filepath = os.path.join(output_dir, filename)
 	max_bytes = 2**31 - 1
 	bytes_out = pickle.dumps(obj)
 	n_bytes = sys.getsizeof(bytes_out)
