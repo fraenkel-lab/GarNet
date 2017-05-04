@@ -18,7 +18,6 @@ from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 from intervaltree import IntervalTree
 import jinja2
 
-
 templateLoader = jinja2.FileSystemLoader(searchpath=".")
 templateEnv = jinja2.Environment(loader=templateLoader)
 
@@ -168,11 +167,10 @@ def load_garnet_file(garnet_file):
 	"""
 	Loads a dictionary of IntervalTrees of motif / gene pairs, pickled by `construct_garnet_file`
 	"""
-
+	logger.info('Loading GarNetDB into memory...')
 	garnetDB = try_to_load_as_pickled_object_or_None(file)
 
 	if garnetDB == None: raise Exception("Invalid GarNetDB file. Quitting...")
-
 	else: return garnetDB
 
 
@@ -205,6 +203,7 @@ def construct_garnet_file(known_genes_file, motifs_file, options):
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 	motifs_and_genes['motif_to_gene_distance'] = motifs_and_genes['motifStart'] - motifs_and_genes['geneStart']
 
+	logger.info('Writing GarNetDB file to disk...')
 	save_as_pickled_object(motifs_and_genes, options['output_dir'], 'garnetDB.pickle')
 
 	return motifs_and_genes
@@ -419,7 +418,7 @@ def IntervalTree_from_motifs(motifs):
 		IntervalTree: of motifs
 	"""
 
-	intervals = zip(motifs.motifStart.values, motifs.motifEnd.values, motifs.to_dict(orient='records'))
+	intervals = zip(motifs.motifStart.astype(int).values, motifs.motifEnd.astype(int).values, motifs.to_dict(orient='records'))
 
 	tree = IntervalTree.from_tuples(intervals)
 
