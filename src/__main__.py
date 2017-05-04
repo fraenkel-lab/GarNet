@@ -7,15 +7,12 @@ import sys
 import argparse
 
 # import this module
-from . import map_known_genes_and_motifs_to_peaks, map_known_genes_to_peaks, map_motifs_to_peaks, map_known_genes_to_motifs, TF_regression
+from . import construct_garnet_file, map_peaks, TF_regression
 
 
 parser = argparse.ArgumentParser(prog="GarNet", description="""
-	Scans genome for nearby features within a given window size.
-	If genes and peaks are provided, we find genes local to peaks.
-	If genes and motif locations are provided, we map genes local to motifs.
-	If peaks and motif locations are provided, we map motifs to nearby peaks.
-	If all three are provided, we map motifs and genes to peaks, and return those motifs and genes.
+
+
 """, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 class FullPaths(argparse.Action):
@@ -29,14 +26,10 @@ def directory(dirname):
 
 parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
 	help='BED file containing epigenetic regions of interest')  # Add future file formats as we support them
-parser.add_argument('-m', '--motifs', dest='motifs_file', type=argparse.FileType('r'),
-	help='BED file containing locations and scores of TF motifs')
-parser.add_argument('-g', '--genes', dest='known_genes_file', type=argparse.FileType('r'),
-	help='file containing locations of known genes in the reference genome (i.e. from UCSC Annotation Database)')
-parser.add_argument('-x', '--xref', dest='xref_file', type=argparse.FileType('r'),
-	help='file containing information about known genes (i.e. from UCSC Annotation Database)')
+parser.add_argument('-db', '--garnetdb', dest='garnet_file', type=argparse.FileType('r'),
+	help='GarNetDB file containing Reference Genome and Transcription Factor Binding Motifs')
 parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.FileType('r'),
-	help='')
+	help='Gene Expression file (tsv format) for TF regression')
 
 parser.add_argument('--up', dest='upstream_window', type=int, default=2000,
 	help='window width in base pairs to consider upstream region')
@@ -63,21 +56,12 @@ def main():
 	args = parser.parse_args()
 	options = {"upstream_window": args.upstream_window, "downstream_window": args.downstream_window, "tss": args.tss, "kgXref_file": args.kgXref_file, "output_dir": args.output_dir}
 
-	if args.peaks_file and args.motifs_file and args.known_genes_file:
-		result_dataframe = map_known_genes_and_motifs_to_peaks(args.peaks_file, args.motifs_file, args.known_genes_file, options)
+	if args.peaks_file and args.garnet_file:
+		result_dataframe = map_peaks(args.peaks_file, args.garnet_file, options)
 		output(result_dataframe, args.output_dir, args.peaks_file+'.garnet')
 
 		if args.expression_file:
 			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes')
-
-	elif args.peaks_file and args.known_genes_file:
-		output(map_known_genes_to_peaks(args.peaks_file, args.known_genes_file, options), args.output_dir, args.peaks_file+'.garnet')
-
-	elif args.peaks_file and args.motifs_file:
-		output(map_motifs_to_peaks(args.peaks_file, args.motifs_file, options), args.output_dir, args.peaks_file+'.garnet')
-
-	elif args.known_genes_file and args.motifs_file:
-		output(map_known_genes_to_motifs(args.motifs_file, args.known_genes_file, options), args.output_dir, args.motifs_file+'.garnet')
 
 	else: raise Exception('GarNet requires at least two files, some combination of [known genes, motifs, peaks] or all three. GarNet --help for more.')
 
