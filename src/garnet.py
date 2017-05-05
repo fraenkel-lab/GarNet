@@ -7,6 +7,7 @@ import os
 # Peripheral python modules
 import pickle
 import logging
+import sqlite3
 
 # Core python external libraries
 import numpy as np
@@ -58,6 +59,7 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None):
 		kgXref_dataframe = pd.read_csv(kgXref_file, delimiter='\t', names=kgXref_fieldnames)
 
 		known_genes_dataframe = known_genes_dataframe.merge(kgXref_dataframe, left_on='geneName', right_on='kgID', how='left')
+		known_genes_dataframe.rename(index=str, columns={"geneName":"ucID", "geneSymbol":"geneName"}, inplace=True)
 
 	else: logger.info('Program was not supplied with a kgXref file, gene names will only be supplied as kgID')
 
@@ -133,45 +135,10 @@ def parse_expression_file(expression_file):
 	return pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
 
 
-def save_as_pickled_object(obj, output_dir, filename):
-	"""
-	This is a defensive way to write pickle.write, allowing for very large files on all platforms
-	"""
-	filepath = os.path.join(output_dir, filename)
-	max_bytes = 2**31 - 1
-	bytes_out = pickle.dumps(obj)
-	n_bytes = sys.getsizeof(bytes_out)
-	with open(filepath, 'wb') as f_out:
-		for idx in range(0, n_bytes, max_bytes):
-			f_out.write(bytes_out[idx:idx+max_bytes])
 
+def output(dataframe, output_dir, filename):
+	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
 
-def try_to_load_as_pickled_object_or_None(filepath):
-	"""
-	This is a defensive way to write pickle.load, allowing for very large files on all platforms
-	"""
-	max_bytes = 2**31 - 1
-	try:
-		input_size = os.path.getsize(filepath)
-		bytes_in = bytearray(0)
-		with open(filepath, 'rb') as f_in:
-			for _ in range(0, input_size, max_bytes):
-				bytes_in += f_in.read(max_bytes)
-		obj = pickle.loads(bytes_in)
-	except:
-		return None
-	return obj
-
-
-def load_garnet_file(garnet_file):
-	"""
-	Loads a dictionary of IntervalTrees of motif / gene pairs, pickled by `construct_garnet_file`
-	"""
-	logger.info('Loading GarNetDB into memory...')
-	garnetDB = try_to_load_as_pickled_object_or_None(file)
-
-	if garnetDB == None: raise Exception("Invalid GarNetDB file. Quitting...")
-	else: return garnetDB
 
 
 ######################################### Public Functions #########################################
@@ -204,7 +171,14 @@ def construct_garnet_file(known_genes_file, motifs_file, options):
 	motifs_and_genes['motif_to_gene_distance'] = motifs_and_genes['motifStart'] - motifs_and_genes['geneStart']
 
 	logger.info('Writing GarNetDB file to disk...')
-	save_as_pickled_object(motifs_and_genes, options['output_dir'], 'garnetDB.pickle')
+
+	GarNetDB = sqlite3.connect(os.path.join(options['output_dir'], 'garnetDB.sql'))
+	motifs_and_genes.to_sql('garnetdb', GarNetDB, if_exists="replace")
+
+	GarNetDB.execute("CREATE INDEX chr_start_stop on garnetdb(chrom, motifStart, motifEnd);")
+
+	GarNetDB.commit()
+	GarNetDB.close()
 
 	return motifs_and_genes
 
@@ -217,7 +191,7 @@ def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files, options):
 	It then returns all pairs of motifs and genes which were found local to peaks.
 
 	Arguments:
-		garnet_file (str or FILE): filepath or file object for the garnet file.
+		garnet_file (str): filepath or file object for the garnet file.
 		peaks_file_or_list_of_peaks_files (str or FILE or list): filepath or file object for the peaks file, or list of such paths or objects
 		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
@@ -226,7 +200,7 @@ def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files, options):
 			with the restriction that these motifs and genes must have been found near a peak.
 	"""
 
-	GarNetDB = load_garnet_file(garnet_file)
+	GarNetDB = sqlite3.connect(garnet_file)
 
 	# peaks_file_or_list_of_peaks_files is either a filepath or FILE, or a list of filepaths or FILEs.
 	# Let's operate on a list in either case, so if it's a single string, put it in a list. #TODO, this will break if it's a single FILE.
@@ -237,7 +211,9 @@ def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files, options):
 
 	for peaks_file in peaks_files:
 
-		peaks_with_associated_genes_and_motifs = intersection_of_dict_of_intervaltree(peaks, GarNetDB)
+		peaks = parse_peaks_file(peaks_file)
+
+		peaks_with_associated_genes_and_motifs = query_db(peaks, GarNetDB)
 
 		motifs_and_genes = [{**peak, **motif_gene_pair} for peak, motif_gene_pairs in peaks_with_associated_genes_and_motifs for motif_gene_pair in motif_gene_pairs]
 
@@ -245,6 +221,8 @@ def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files, options):
 		motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output).set_index("peakName")
 
 		output.append(motifs_and_genes)
+
+	GarNetDB.close()
 
 	# conversely, if this function was passed a single file, return a single dataframe
 	if len(output) == 1: output = output[0]
@@ -348,24 +326,6 @@ def dict_of_IntervalTree_from_motifs_file(motifs_file):
 	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs.items()}
 
 	return motifs
-
-
-def dict_of_IntervalTree_from_peak_file(peaks_file):
-	"""
-	Arguments:
-		peaks_file (str or FILE): filepath or file object for the peaks file
-
-	Returns:
-		dict: dictionary of intervals in known genes to intervals in peaks.
-	"""
-
-	logger.info('Parsing peaks file...')
-	peaks = parse_peaks_file(peaks_file)
-	peaks = group_by_chromosome(peaks)
-	logger.info('Parse complete, constructing IntervalTrees...')
-	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks.items()}
-
-	return peaks
 
 
 def group_by_chromosome(dataframe):
@@ -496,3 +456,31 @@ def intersection_of_dict_of_intervaltree(A, B):
 	intersection = [(a.data, b.data) for key in common_keys for a in A[key] for b in B[key].search(a)]
 
 	return intersection
+
+
+def query_db(peaks, GarNetDB):
+	"""
+
+	Arguments:
+		peaks (pd.DataFrame)
+		GarNetDB (squlite3.connection):
+
+	"""
+	overlaps = []
+
+	df['motifStart']
+	df['motifEnd']
+	df['chrom']
+
+	peaks.to_sql('peaks', GarNetDB, if_exists="replace")
+
+	overlaps[chrom] = pd.read_sql_query("""
+		SELECT db.*
+		FROM db
+		JOIN peaks ON garnetdb.chr        == peaks.chr
+				  AND garnetdb.motifStart <= peaks.peakEnd
+				  AND garnetdb.motifEnd   >= peaks.peakStart;
+		""", GarNetDB)
+
+	return overlaps
+

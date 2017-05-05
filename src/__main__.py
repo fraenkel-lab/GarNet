@@ -37,11 +37,6 @@ parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=
 
 
 def output(dataframe, output_dir, filename):
-	"""
-	Arguments:
-		dataframe (dataframe): the principal result of the analysis we want to write out as a csv.
-		output_dir (str): the fullpath of a directory we will write our output to.
-	"""
 	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
 
 
