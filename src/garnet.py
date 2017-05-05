@@ -475,8 +475,8 @@ def query_db(peaks, GarNetDB):
 	peaks.to_sql('peaks', GarNetDB, if_exists="replace")
 
 	overlaps[chrom] = pd.read_sql_query("""
-		SELECT db.*
-		FROM db
+		SELECT garnetdb.*
+		FROM garnetdb
 		JOIN peaks ON garnetdb.chr        == peaks.chr
 				  AND garnetdb.motifStart <= peaks.peakEnd
 				  AND garnetdb.motifEnd   >= peaks.peakStart;
