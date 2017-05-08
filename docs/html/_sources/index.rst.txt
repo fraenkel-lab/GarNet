@@ -11,10 +11,6 @@ Some important notes:
 
 - GarNet uses tab-delimited files, otherwise known as tsv's. BED files are already tsv, so no worries there.
 
-- GarNet saves intermediate files for all input datasets, which it can use instead of raw tsv's saving computation and time. Those are pickled IntervalTrees (files which end in .pickle)
-
-- We've supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.
-
 
 .. automodule:: garnet
 	:members:

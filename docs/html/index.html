@@ -48,7 +48,7 @@
 	      <div class="row-fluid">
 		<div class="span9">
   		  <div class="spc-navbar">
-		    <generator object macro at 0x111c93bf8>
+		    <generator object macro at 0x10784bc50>
 		  </div>
 		</div>
 	      </div>
@@ -67,111 +67,56 @@ please see the <a class="reference external" href="https://github.com/fraenkel-l
 <li>We&#8217;ve supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.</li>
 </ul>
 <span class="target" id="module-garnet"></span><dl class="function">
-<dt id="garnet.map_known_genes_and_motifs_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_and_motifs_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_and_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_and_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find motifs and associated genes local to peaks.</p>
-<p>This function searches for motifs &#8220;under&#8221; peaks from an epigenomics dataset and &#8220;around&#8221; peaks for genes.
-It then returns all pairs of motifs and genes which were found local to peaks.</p>
-<table class="docutils field-list" frame="void" rules="none">
+<dt id="garnet.IntervalTree_from_motifs">
+<code class="descclassname">garnet.</code><code class="descname">IntervalTree_from_motifs</code><span class="sig-paren">(</span><em>motifs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#IntervalTree_from_motifs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.IntervalTree_from_motifs" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>motifs</strong> (<em>dataframe</em>) &#8211; Must be a dataframe with motifStart and motifEnd columns</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>a dataframe with rows of transcription factor binding motifs and nearby genes</dt>
-<dd><p class="first last">with the restriction that these motifs and genes must have been found near a peak.</p>
-</dd>
-</dl>
-</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">of motifs</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">IntervalTree</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="function">
-<dt id="garnet.map_known_genes_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find all genes nearby to peaks.</p>
-<p>This function searches in the neighborhood of peaks for genes and returns each peak / gene pair
-which were found to be local to one another.</p>
-<table class="docutils field-list" frame="void" rules="none">
+<dt id="garnet.IntervalTree_from_peaks">
+<code class="descclassname">garnet.</code><code class="descname">IntervalTree_from_peaks</code><span class="sig-paren">(</span><em>peaks</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#IntervalTree_from_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.IntervalTree_from_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>peaks</strong> (<em>dataframe</em>) &#8211; Must be a dataframe with peakStart and peakEnd columns</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing peaks and nearby genes</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">of peaks</td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">IntervalTree</td>
 </tr>
 </tbody>
 </table>
 </dd></dl>
 
 <dl class="function">
-<dt id="garnet.map_motifs_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_peaks</code><span class="sig-paren">(</span><em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find known transcription factor binding motifs motifs &#8220;below&#8221; input epigenetic peaks.</p>
-<p>This function searches for overlap of motifs and peaks, and returns peak / motif pairs.</p>
-<table class="docutils field-list" frame="void" rules="none">
+<dt id="garnet.IntervalTree_from_reference">
+<code class="descclassname">garnet.</code><code class="descname">IntervalTree_from_reference</code><span class="sig-paren">(</span><em>reference</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#IntervalTree_from_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.IntervalTree_from_reference" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>reference</strong> (<em>dataframe</em>) &#8211; Must be a dataframe with <cite>strand</cite>, <cite>geneStart</cite>, and <cite>geneEnd</cite> columns</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool}</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing peaks and nearby transcription factor binding motifs</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">of genes from the reference</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="garnet.map_known_genes_to_motifs">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_motifs</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_motifs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_motifs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Associate genes local to motifs with those motifs, without peak information.</p>
-<p>This function searches for overlap of motifs and genes, and returns motif / gene pairs.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing transcription factor binding motifs and nearby genes.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">IntervalTree</p>
 </td>
 </tr>
 </tbody>
@@ -181,7 +126,8 @@ which were found to be local to one another.</p>
 <dl class="function">
 <dt id="garnet.TF_regression">
 <code class="descclassname">garnet.</code><code class="descname">TF_regression</code><span class="sig-paren">(</span><em>motifs_and_genes_dataframe</em>, <em>expression_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#TF_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.TF_regression" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.</p>
+<dd><p>Perform linear regression of the expression of genes versus the strength of the associated
+transcription factor binding motifs and report results.</p>
 <p>This function parses an expression file of two columns: gene symbol and expression value, and
 merges the expression profile into the motifs and genes file, resulting in information about
 transcription factor binding motifs local to genes, and those genes&#8217; expressions. We do linear
@@ -209,27 +155,280 @@ summary of the regressions.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="garnet.batch_scan_epigenomics_files">
-<code class="descclassname">garnet.</code><code class="descname">batch_scan_epigenomics_files</code><span class="sig-paren">(</span><em>list_of_peaks_files</em>, <em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#batch_scan_epigenomics_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.batch_scan_epigenomics_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>Scan each peak file for nearby motifs and genes, in the same manner as map_known_genes_and_motifs_to_peaks</p>
-<p>This function principally removes the overhead of loading and unloading and re-loading
-motifs intervaltrees and reference intervaltrees from memory, which is the most time-intensive
-operation in this package. Each of the other functions in this package is targeted towards
-individual samples, but if you receive many peaks files at once, it makes sense to analyze them
-all in one fell swoop.
-This function cannot be called from the CLI defined by the ArgParser above.
-This function writes resulting files to the specified output_dir.</p>
+<dt id="garnet.construct_garnet_file">
+<code class="descclassname">garnet.</code><code class="descname">construct_garnet_file</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#construct_garnet_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.construct_garnet_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a representation of the genome to which to map peaks.</p>
+<p>This function searches for overlap of motifs and genes, and writes a file of motif / gene pairs.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>list_of_peaks_files</strong> (<em>list</em>) &#8211; a list of filepaths associated with epigenomics files</li>
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known genes file</li>
 <li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>kgXref_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known genes reference file</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing transcription factor binding motifs and nearby genes.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.dict_of_IntervalTree_from_known_genes_file">
+<code class="descclassname">garnet.</code><code class="descname">dict_of_IntervalTree_from_known_genes_file</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#dict_of_IntervalTree_from_known_genes_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.dict_of_IntervalTree_from_known_genes_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; options which may come from the argument parser.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">dictionary of chromosome to IntervalTree of known genes</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.dict_of_IntervalTree_from_motifs_file">
+<code class="descclassname">garnet.</code><code class="descname">dict_of_IntervalTree_from_motifs_file</code><span class="sig-paren">(</span><em>motifs_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#dict_of_IntervalTree_from_motifs_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.dict_of_IntervalTree_from_motifs_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dictionary of chromosome to IntervalTree of TF binding motifs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.dict_of_IntervalTree_from_peak_file">
+<code class="descclassname">garnet.</code><code class="descname">dict_of_IntervalTree_from_peak_file</code><span class="sig-paren">(</span><em>peaks_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#dict_of_IntervalTree_from_peak_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.dict_of_IntervalTree_from_peak_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dictionary of intervals in known genes to intervals in peaks.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.group_by_chromosome">
+<code class="descclassname">garnet.</code><code class="descname">group_by_chromosome</code><span class="sig-paren">(</span><em>dataframe</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#group_by_chromosome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.group_by_chromosome" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dataframe</strong> (<em>dataframe</em>) &#8211; Must be a dataframe with a chrom column</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">dictionary of chromosome names (e.g. &#8216;chr1&#8217;) to dataframes</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.intersection_of_dict_of_intervaltree">
+<code class="descclassname">garnet.</code><code class="descname">intersection_of_dict_of_intervaltree</code><span class="sig-paren">(</span><em>A</em>, <em>B</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#intersection_of_dict_of_intervaltree"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.intersection_of_dict_of_intervaltree" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>A</strong> (<em>dict</em>) &#8211; is a dictionary of {chrom (str): IntervalTree}</li>
+<li><strong>B</strong> (<em>dict</em>) &#8211; is a dictionary of {chrom (str): IntervalTree}</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">{keys shared between A and B: {intervals in A: [list of overlapping intervals in B]} }</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dict</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.load_garnet_file">
+<code class="descclassname">garnet.</code><code class="descname">load_garnet_file</code><span class="sig-paren">(</span><em>garnet_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#load_garnet_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.load_garnet_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads a dictionary of IntervalTrees of motif / gene pairs, pickled by <cite>construct_garnet_file</cite></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.map_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_peaks</code><span class="sig-paren">(</span><em>garnet_file</em>, <em>peaks_file_or_list_of_peaks_files</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find motifs and associated genes local to peaks.</p>
+<p>This function searches for motifs &#8220;under&#8221; peaks from an epigenomics dataset and &#8220;around&#8221; peaks for genes.
+It then returns all pairs of motifs and genes which were found local to peaks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>garnet_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the garnet file.</li>
+<li><strong>peaks_file_or_list_of_peaks_files</strong> (<em>str</em><em> or </em><em>FILE</em><em> or </em><em>list</em>) &#8211; filepath or file object for the peaks file, or list of such paths or objects</li>
 <li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
 </ul>
 </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>a dataframe with rows of transcription factor binding motifs and nearby genes</dt>
+<dd><p class="first last">with the restriction that these motifs and genes must have been found near a peak.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.parse_expression_file">
+<code class="descclassname">garnet.</code><code class="descname">parse_expression_file</code><span class="sig-paren">(</span><em>expression_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#parse_expression_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.parse_expression_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse gene expression scores from a transcriptomics assay (e.g. RNAseq) into a dataframe</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expression_file</strong> (<em>string</em><em> or </em><em>FILE</em>) &#8211; Two-column, tab-delimited file of gene / gene expression score</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">expression dataframe</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dataframe</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.parse_known_genes_file">
+<code class="descclassname">garnet.</code><code class="descname">parse_known_genes_file</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>kgXref_file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#parse_known_genes_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.parse_known_genes_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the RefSeq known genes file into a pandas dataframe</p>
+<p>The known genes file format is the following:
+<a class="reference external" href="http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql">http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>known_genes_file</strong> (<em>string</em><em> or </em><em>FILE</em>) &#8211; file procured from RefSeq with full list of genes in genome</li>
+<li><strong>kgXref_file</strong> (<em>string</em><em> or </em><em>FILE</em>) &#8211; (optional) additional &#8220;Cross Reference&#8221; file with more details on those genes</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">known genes dataframe</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.parse_motifs_file">
+<code class="descclassname">garnet.</code><code class="descname">parse_motifs_file</code><span class="sig-paren">(</span><em>motifs_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#parse_motifs_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.parse_motifs_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the MotifMap BED file listing Transcription Factor Binding Motifs in the genome</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>motifs_file</strong> (<em>string</em><em> or </em><em>FILE</em>) &#8211; file procured from MotifMap with full list of TF binding sites in the genome</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">motif dataframe</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dataframe</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.parse_peaks_file">
+<code class="descclassname">garnet.</code><code class="descname">parse_peaks_file</code><span class="sig-paren">(</span><em>peaks_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#parse_peaks_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.parse_peaks_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a BED file with peaks from an epigenomics assay (e.g. ATAC) into a dataframe</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>peaks_file</strong> (<em>string</em><em> or </em><em>FILE</em>) &#8211; BED file from epigenomics assay</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">peaks dataframe</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dataframe</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.save_as_pickled_object">
+<code class="descclassname">garnet.</code><code class="descname">save_as_pickled_object</code><span class="sig-paren">(</span><em>obj</em>, <em>output_dir</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#save_as_pickled_object"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.save_as_pickled_object" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a defensive way to write pickle.write, allowing for very large files on all platforms</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.try_to_load_as_pickled_object_or_None">
+<code class="descclassname">garnet.</code><code class="descname">try_to_load_as_pickled_object_or_None</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#try_to_load_as_pickled_object_or_None"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.try_to_load_as_pickled_object_or_None" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a defensive way to write pickle.load, allowing for very large files on all platforms</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.type_of_peak">
+<code class="descclassname">garnet.</code><code class="descname">type_of_peak</code><span class="sig-paren">(</span><em>row</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#type_of_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.type_of_peak" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>row</strong> (<em>pd.Series</em>) &#8211; A row of data from a dataframe with peak and gene information</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>a name for the relationship between the peak and the gene:</dt>
+<dd><ul class="first last simple">
+<li>upstream if the start of the peak is more than 2kb above the start of the gene</li>
+<li>promoter if the start of the peak is above the start of the gene</li>
+<li>downstream if the start of the peak is below the start of the gene</li>
+</ul>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
 </tr>
 </tbody>
 </table>
