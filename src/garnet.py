@@ -110,6 +110,8 @@ def parse_peaks_file(peaks_file):
 
 	peaks_dataframe.rename(index=str, columns={"chromStart":"peakStart", "chromEnd":"peakEnd", "name":"peakName", "score":"peakScore", "strand":"peakStrand"}, inplace=True)
 
+	peaks_dataframe = peaks_dataframe[['peakName', 'chrom', 'peakStart', 'peakEnd', 'peakScore']]
+
 	# if peaks file format is MACS
 
 	# peaks_fieldnames = ["chr", "start", "end", "length", "summit", "tags", "-10*log10(pvalue)", "fold_enrichment FDR(%)"]
@@ -466,15 +468,10 @@ def query_db(peaks, GarNetDB):
 		GarNetDB (squlite3.connection):
 
 	"""
-	overlaps = []
-
-	df['motifStart']
-	df['motifEnd']
-	df['chrom']
 
 	peaks.to_sql('peaks', GarNetDB, if_exists="replace")
 
-	overlaps[chrom] = pd.read_sql_query("""
+	overlaps = pd.read_sql_query("""
 		SELECT garnetdb.*
 		FROM garnetdb
 		JOIN peaks ON garnetdb.chr        == peaks.chr
