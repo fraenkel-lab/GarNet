@@ -40,39 +40,22 @@ logger.addHandler(handler)
 
 ######################################## File Parsing Logic #######################################
 
-def parse_known_genes_file(known_genes_filepath_or_file_object, kgXref_filepath_or_file_object_or_None):
+def parse_garnet_file(filepath_or_file_object):
 	"""
 	Arguments:
-		known_genes_filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
-
-	The known genes file format is the following:
-	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
+		filepath_or_file_object (string or FILE): A filepath or FILE object
 
 	Returns:
-		dataframe: known genes dataframe
+		dict: {chr: IntervalTree of regions}
 	"""
 
-	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
 
-	known_genes_dataframe = pd.read_csv(known_genes_filepath_or_file_object, delimiter='\t', names=known_genes_fieldnames)
-
-	known_genes_dataframe.rename(index=str, columns={"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"}, inplace=True)
-
-	if kgXref_filepath_or_file_object_or_None == None:
-		logger.info('  - Program was not supplied with a kgXref file, gene names will only be supplied as kgID')
-
-	else:
-		kgXref_dataframe = parse_kgXref_file(kgXref_filepath_or_file_object_or_None)
-
-		known_genes_dataframe = known_genes_dataframe.merge(kgXref_dataframe, left_on='geneName', right_on='kgID', how='left')
-
-	return known_genes_dataframe
 
 
 def parse_peaks_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
+		filepath_or_file_object (string or FILE): A filepath or FILE object
 
 	Returns:
 		dataframe: peaks dataframe
@@ -97,49 +80,10 @@ def parse_peaks_file(filepath_or_file_object):
 	return peaks_dataframe
 
 
-def parse_kgXref_file(filepath_or_file_object):
-	"""
-	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
-
-	Returns:
-		dataframe: additional known genes information as a dataframe
-	"""
-
-	kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
-
-	kgXref_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=kgXref_fieldnames)
-
-	return kgXref_dataframe
-
-
-def parse_motifs_file(filepath_or_file_object):
-	"""
-	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
-
-	Returns:
-		dataframe: motif dataframe
-	"""
-
-	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
-	# motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
-	# motif_fieldnames = ["motifName", "chrom", "motifStrand", "motifScore", "motifStart", "motifEnd"]
-
-	motif_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=motif_fieldnames)
-
-	# motif_dataframe['motifID'], motif_dataframe['motifName'] = motif_dataframe['name'].str.split('=', 1).str
-
-	# motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
-	motif_dataframe.rename(index=str, columns={"start":"motifStart", "stop":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
-
-	return motif_dataframe
-
-
 def parse_expression_file(filepath_or_file_object):
 	"""
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or file object (conventionally the result of a call to `open(filepath, 'r')`)
+		filepath_or_file_object (string or FILE): A filepath or FILE object
 
 	Returns:
 		dataframe: expression dataframe
@@ -200,9 +144,9 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 	It then returns all pairs of motifs and genes which were found local to peaks.
 
 	Arguments:
-		peaks_file (str or FILE): filepath or file object for the peaks file.
-		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		motifs_file (str or FILE): filepath or file object for the motifs file
+		peaks_file (str or FILE): filepath or FILE object
+		known_genes_file (str or FILE): filepath or FILE object
+		motifs_file (str or FILE): filepath or FILE object
 		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
@@ -232,8 +176,8 @@ def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
 	which were found to be local to one another.
 
 	Arguments:
-		peaks_file (str or FILE): filepath or file object for the peaks file.
-		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		peaks_file (str or FILE): filepath or FILE object
+		known_genes_file (str or FILE): filepath or FILE object
 		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
@@ -262,8 +206,8 @@ def map_motifs_to_peaks(motifs_file, peaks_file, options):
 	This function searches for overlap of motifs and peaks, and returns peak / motif pairs.
 
 	Arguments:
-		peaks_file (str or FILE): filepath or file object for the peaks file.
-		motifs_file (str or FILE): filepath or file object for the motifs file
+		peaks_file (str or FILE): filepath or FILE object
+		motifs_file (str or FILE): filepath or FILE object
 		options (dict): {"output_dir": string (optional)})
 
 	Returns:
@@ -290,8 +234,8 @@ def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
 	This function searches for overlap of motifs and genes, and returns motif / gene pairs.
 
 	Arguments:
-		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		motifs_file (str or FILE): filepath or file object for the motifs file
+		known_genes_file (str or FILE): filepath or FILE object
+		motifs_file (str or FILE): filepath or FILE object
 		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 
 	Returns:
@@ -386,8 +330,8 @@ def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_f
 
 	Arguments:
 		list_of_peaks_files (list): a list of filepaths associated with epigenomics files
-		known_genes_file (str or FILE): filepath or file object for the known_genes file
-		motifs_file (str or FILE): filepath or file object for the motifs file
+		known_genes_file (str or FILE): filepath or FILE object
+		motifs_file (str or FILE): filepath or FILE object
 		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
 	"""
 
@@ -414,7 +358,7 @@ def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_f
 def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 	"""
 	Arguments:
-		peaks_file (str or FILE): filepath or file object for the peaks file
+		peaks_file (str or FILE): filepath or FILE object
 
 	Returns:
 		dict: dictionary of intervals in known genes to intervals in peaks.
@@ -442,7 +386,7 @@ def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_dir):
 	"""
 	Arguments:
-		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		known_genes_file (str or FILE): filepath or FILE object
 		options (dict): options which may come from the argument parser.
 
 	Returns:
@@ -466,34 +410,6 @@ def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_d
 		save_as_pickled_object(reference, output_dir, 'reference_IntervalTree_dictionary.pickle')
 
 	return reference
-
-
-def dict_of_IntervalTree_from_motifs_file(motifs_file, output_dir):
-	"""
-	Arguments:
-		motifs_file (str or FILE): filepath or file object for the motifs file
-
-	Returns:
-		dict: dictionary of chromosome to IntervalTree of TF binding motifs
-	"""
-
-	logger.info("Checking if motifs file was generated by pickle...")
-	motifs = try_to_load_as_pickled_object_or_None(motifs_file)
-	if motifs:
-		logger.info('  - Motifs file seems to have been generated by pickle, assuming IntervalTree format and proceeding...')
-		return motifs
-
-	logger.info('  - Motifs file does not seem to have been generated by pickle, proceeding to parse...')
-	motifs = parse_motifs_file(motifs_file)
-	motifs = group_by_chromosome(motifs)
-	logger.info('  - Parse complete, constructing IntervalTrees...')
-	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs.items()}
-
-	if output_dir:
-		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-		save_as_pickled_object(motifs, output_dir, 'motifs_IntervalTree_dictionary.pickle')
-
-	return motifs
 
 
 def group_by_chromosome(dataframe):
