@@ -19,12 +19,7 @@ from intervaltree import IntervalTree
 import jinja2
 
 # list of public methods:
-__all__ = [ "map_known_genes_and_motifs_to_peaks",
-			"map_known_genes_to_peaks",
-			"map_motifs_to_peaks",
-			"map_known_genes_to_motifs",
-			"TF_regression",
-			"batch_scan_epigenomics_files" ]
+__all__ = [ "parse_garnet_file", "map_peaks", "TF_regression" ]
 
 
 templateLoader = jinja2.FileSystemLoader(searchpath=".")
@@ -49,47 +44,47 @@ def parse_garnet_file(filepath_or_file_object):
 		dict: {chr: IntervalTree of regions}
 	"""
 
+	garnet_file = try_to_load_as_pickled_object_or_None(filepath_or_file_object)
+
+	if garnet_file == None: sys.exit('Unable to load garnet file')
+
+	return garnet_file
 
 
-
-def parse_peaks_file(filepath_or_file_object):
+def parse_peaks_bed_file(peaks_file):
 	"""
+	Parse a BED file with peaks from an epigenomics assay (e.g. ATAC) into a dataframe
+
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or FILE object
+		peaks_file (string or FILE): BED file from epigenomics assay
 
 	Returns:
 		dataframe: peaks dataframe
 	"""
 
-	# if peaks file format is BED
-
 	peaks_fieldnames = ["chrom","chromStart","chromEnd","name","score","strand","thickStart","thickEnd","itemRgb","blockCount","blockSizes","blockStarts"]
 
-	peaks_dataframe = pd.read_csv(filepath_or_file_object, delimiter='\t', names=peaks_fieldnames)
+	peaks_dataframe = pd.read_csv(peaks_file, delimiter='\t', names=peaks_fieldnames)
 
 	peaks_dataframe.rename(index=str, columns={"chromStart":"peakStart", "chromEnd":"peakEnd", "name":"peakName", "score":"peakScore", "strand":"peakStrand"}, inplace=True)
 
-	# if peaks file format is MACS
-
-	# peaks_fieldnames = ["chr", "start", "end", "length", "summit", "tags", "-10*log10(pvalue)", "fold_enrichment FDR(%)"]
-
-	# if peaks file format is GEM
-
-	# peaks_fieldnames = ["Location", "IP binding strength", "Control binding strength", "Fold", "Expected binding strength", "Q_-lg10", "P_-lg10", "P_poiss", "IPvsEMP", "Noise", "KmerGroup", "KG_hgp", "Strand"]
+	peaks_dataframe = peaks_dataframe[['peakName', 'chrom', 'peakStart', 'peakEnd', 'peakScore']]
 
 	return peaks_dataframe
 
 
-def parse_expression_file(filepath_or_file_object):
+def parse_tabular_expression_file(expression_file):
 	"""
+	Parse gene expression scores from a transcriptomics assay (e.g. RNAseq) into a dataframe
+
 	Arguments:
-		filepath_or_file_object (string or FILE): A filepath or FILE object
+		expression_file (string or FILE): Two-column, tab-delimited file of gene / gene expression score
 
 	Returns:
 		dataframe: expression dataframe
 	"""
 
-	return pd.read_csv(filepath_or_file_object, delimiter='\t', names=["name", "expression"])
+	return pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
 
 
 def save_as_pickled_object(obj, directory, filename):
@@ -123,20 +118,12 @@ def try_to_load_as_pickled_object_or_None(filepath):
 
 
 def output(dataframe, output_dir, filename):
-	"""
-	Arguments:
-		dataframe (dataframe): the principal result of the analysis we want to write out as a csv.
-		output_dir (str): the fullpath of a directory we will write our output to.
-	"""
-
-	logger.info('Writing output file '+filename)
-
 	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
 
 
 ######################################### Public Functions #########################################
 
-def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_file, options):
+def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files):
 	"""
 	Find motifs and associated genes local to peaks.
 
@@ -144,117 +131,43 @@ def map_known_genes_and_motifs_to_peaks(known_genes_file, motifs_file, peaks_fil
 	It then returns all pairs of motifs and genes which were found local to peaks.
 
 	Arguments:
-		peaks_file (str or FILE): filepath or FILE object
-		known_genes_file (str or FILE): filepath or FILE object
-		motifs_file (str or FILE): filepath or FILE object
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		garnet_file (str): filepath or file object for the garnet file.
+		peaks_file_or_list_of_peaks_files (str or FILE or list): filepath or file object for the peaks file, or list of such paths or objects
 
 	Returns:
 		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
 			with the restriction that these motifs and genes must have been found near a peak.
 	"""
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
+	genome = parse_garnet_file(garnet_file)
 
-	peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
+	# peaks_file_or_list_of_peaks_files is either a filepath or FILE, or a list of filepaths or FILEs.
+	# Let's operate on a list in either case, so if it's a single string, put it in a list. #TODO, this will break if it's a single FILE.
+	if isinstance(peaks_file_or_list_of_peaks_files, str): peaks_files = [peaks_file_or_list_of_peaks_files]
+	else: peaks_files = peaks_file_or_list_of_peaks_files
 
-	motifs_and_genes = [{**motif, **gene, **peak} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
+	output = []
 
-	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
-	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
+	for peaks_file in peaks_files:
 
-	return motifs_and_genes
+		peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
 
+		peaks_with_associated_genes_and_motifs = intersection_of_dict_of_intervaltree(peaks, genome)
 
-def map_known_genes_to_peaks(known_genes_file, peaks_file, options):
-	"""
-	Find all genes nearby to peaks.
+		motifs_and_genes = [{**motif, **gene, **peak} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
 
-	This function searches in the neighborhood of peaks for genes and returns each peak / gene pair
-	which were found to be local to one another.
+		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
+		motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 
-	Arguments:
-		peaks_file (str or FILE): filepath or FILE object
-		known_genes_file (str or FILE): filepath or FILE object
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		# Should probably map type_of_peak here
 
-	Returns:
-		dataframe: A dataframe listing peaks and nearby genes
-	"""
+		output.append(motifs_and_genes)
 
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
+	GarNetDB.close()
 
-	peaks_with_associated_genes = intersection_of_dict_of_intervaltree(peaks, reference)
-
-	peaks_and_genes = pd.DataFrame.from_records([{**peak, **gene} for peak, gene in peaks_with_associated_genes])
-
-	peaks_and_genes['distance'] = abs((peaks_and_genes['peakStart'] + peaks_and_genes['peakEnd'])/2 - peaks_and_genes['geneStart'])
-	peaks_and_genes['type'] = peaks_and_genes.apply(type_of_peak, axis=1)  # upstream/promoter/downstream/intergenic
-
-	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "geneName", "geneStart", "geneEnd", "distance", "type"]
-
-	return peaks_and_genes[columns_to_output]
-
-
-def map_motifs_to_peaks(motifs_file, peaks_file, options):
-	"""
-	Find known transcription factor binding motifs motifs "below" input epigenetic peaks.
-
-	This function searches for overlap of motifs and peaks, and returns peak / motif pairs.
-
-	Arguments:
-		peaks_file (str or FILE): filepath or FILE object
-		motifs_file (str or FILE): filepath or FILE object
-		options (dict): {"output_dir": string (optional)})
-
-	Returns:
-		dataframe: A dataframe listing peaks and nearby transcription factor binding motifs
-	"""
-
-	peaks = dict_of_IntervalTree_from_peak_file(peaks_file, options.get('output_dir'))
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
-
-	peaks_with_associated_motifs = intersection_of_dict_of_intervaltree(peaks, motifs)
-
-	peaks_and_motifs = [{**peak, **motif} for peak, motif in peaks_with_associated_motifs]
-
-	columns_to_output = ["chrom", "peakStart", "peakEnd", "peakName", "peakScore", "motifID", "motifName", "motifStart", "motifEnd", "motifScore"]
-	peaks_and_motifs = pd.DataFrame.from_records(peaks_and_motifs, columns=columns_to_output)
-
-	return peaks_and_motifs
-
-
-def map_known_genes_to_motifs(known_genes_file, motifs_file, options):
-	"""
-	Associate genes local to motifs with those motifs, without peak information.
-
-	This function searches for overlap of motifs and genes, and returns motif / gene pairs.
-
-	Arguments:
-		known_genes_file (str or FILE): filepath or FILE object
-		motifs_file (str or FILE): filepath or FILE object
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
-
-	Returns:
-		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
-	"""
-
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
-
-	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
-
-	motifs_and_genes = [{**motif, **gene} for motif, gene in motifs_with_associated_genes]
-
-	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
-	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
-
-	peaks_and_genes['distance'] = peaks_and_genes['motifStart'] - peaks_and_genes['geneStart']
-
-	return motifs_and_genes
+	# conversely, if this function was passed a single file, return a single dataframe
+	if len(output) == 1: output = output[0]
+	return output
 
 
 def TF_regression(motifs_and_genes_dataframe, expression_file, options):
@@ -316,46 +229,9 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	return imputed_TF_features_dataframes
 
 
-def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_file, options):
-	"""
-	Scan each peak file for nearby motifs and genes, in the same manner as map_known_genes_and_motifs_to_peaks
-
-	This function principally removes the overhead of loading and unloading and re-loading
-	motifs intervaltrees and reference intervaltrees from memory, which is the most time-intensive
-	operation in this package. Each of the other functions in this package is targeted towards
-	individual samples, but if you receive many peaks files at once, it makes sense to analyze them
-	all in one fell swoop.
-	This function cannot be called from the CLI defined by the ArgParser above.
-	This function writes resulting files to the specified output_dir.
-
-	Arguments:
-		list_of_peaks_files (list): a list of filepaths associated with epigenomics files
-		known_genes_file (str or FILE): filepath or FILE object
-		motifs_file (str or FILE): filepath or FILE object
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
-	"""
-
-	reference = dict_of_IntervalTree_from_reference_file(known_genes_file, options, options.get('output_dir'))
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file, options.get('output_dir'))
-
-	for peaks_file in list_of_peaks_files:
-
-		logger.info(peaks_file)
-		peaks = dict_of_IntervalTree_from_peak_file(peaks_file, None)
-
-		peaks_with_associated_genes_and_motifs = intersection_of_three_dicts_of_intervaltrees(peaks, reference, motifs)
-
-		motifs_and_genes = [{**motif, **gene, **peak} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
-
-		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
-		motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
-
-		output(motifs_and_genes, options.get('output_dir'), peaks_file + '.garnet')
-
-
 ######################################## Private Functions ########################################
 
-def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
+def dict_of_IntervalTree_from_peak_file(peaks_file):
 	"""
 	Arguments:
 		peaks_file (str or FILE): filepath or FILE object
@@ -363,12 +239,6 @@ def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 	Returns:
 		dict: dictionary of intervals in known genes to intervals in peaks.
 	"""
-
-	logger.info("Checking if peaks file was generated by pickle and trying to load it...")
-	peaks = try_to_load_as_pickled_object_or_None(peaks_file)
-	if peaks:
-		logger.info('  - Peaks file seems to have been generated by pickle, assuming IntervalTree format and proceeding...')
-		return peaks
 
 	logger.info('  - Peaks file does not seem to have been generated by pickle, proceeding to parse...')
 	peaks = parse_peaks_file(peaks_file)
@@ -383,35 +253,6 @@ def dict_of_IntervalTree_from_peak_file(peaks_file, output_dir):
 	return peaks
 
 
-def dict_of_IntervalTree_from_reference_file(known_genes_file, options, output_dir):
-	"""
-	Arguments:
-		known_genes_file (str or FILE): filepath or FILE object
-		options (dict): options which may come from the argument parser.
-
-	Returns:
-		dict: dictionary of chromosome to IntervalTree of known genes
-	"""
-
-	logger.info("Checking if known genes file was generated by pickle...")
-	reference = try_to_load_as_pickled_object_or_None(known_genes_file)
-	if reference:
-		logger.info('  - Known Genes file seems to have been generated by pickle, assuming IntervalTree format and proceeding...')
-		return reference
-
-	logger.info('  - Known Genes file does not seem to have been generated by pickle, proceeding to parse...')
-	reference = parse_known_genes_file(known_genes_file, options.get('kgXref_file'))
-	reference = group_by_chromosome(reference)
-	logger.info('  - Parse complete, constructing IntervalTrees...')
-	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference.items()}
-
-	if output_dir:
-		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-		save_as_pickled_object(reference, output_dir, 'reference_IntervalTree_dictionary.pickle')
-
-	return reference
-
-
 def group_by_chromosome(dataframe):
 	"""
 	Arguments:
@@ -424,30 +265,6 @@ def group_by_chromosome(dataframe):
 	return dict(list(dataframe.groupby('chrom')))
 
 
-def type_of_peak(row):
-	"""
-	Arguments:
-		row (pd.Series): A row of data from a dataframe with peak and gene information
-
-	Returns:
-		str: a name for the relationship between the peak and the gene:
-				- upstream if the start of the peak is more than 2kb above the start of the gene
-				- promoter if the start of the peak is above the start of the gene
-				- downstream if the start of the peak is below the start of the gene
-	"""
-
-	if row['geneStrand'] == '+':
-		if -2000 >= row['peakStart'] - row['geneStart']: 	return 'upstream'
-		if -2000 < row['peakStart'] - row['geneStart'] < 0: return 'promoter'
-		if 0 <= row['peakStart'] - row['geneStart']: 		return 'downstream'  # a.k.a. row['peakStart'] < row['geneStart']
-		return 'intergenic'
-	if row['geneStrand'] == '-':
-		if 2000 <= row['peakEnd'] - row['geneEnd']: 	return 'upstream'
-		if 2000 > row['peakEnd'] - row['geneEnd'] > 0: 	return 'promoter'
-		if 0 >= row['peakEnd'] - row['geneEnd']: 		return 'downstream'  # a.k.a. row['peakEnd'] < row['geneEnd']
-		return 'intergenic'
-
-
 def IntervalTree_from_peaks(peaks):
 	"""
 	Arguments:
@@ -458,51 +275,6 @@ def IntervalTree_from_peaks(peaks):
 	"""
 
 	intervals = zip(peaks.peakStart.values, peaks.peakEnd.values, peaks.to_dict(orient='records'))
-
-	tree = IntervalTree.from_tuples(intervals)
-
-	return tree
-
-
-def IntervalTree_from_reference(reference, options):
-	"""
-	Arguments:
-		reference (dataframe): Must be a dataframe with `strand`, `geneStart`, and `geneEnd` columns
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool}
-
-	Returns:
-		IntervalTree: of genes from the reference
-	"""
-
-	upstream_window = options.get('upstream_window') or 2000
-	downstream_window = options.get('downstream_window') or 2000
-	window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site = options.get('tss') or False
-
-	if window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site:
-		starts = reference.apply(lambda x: x.geneStart - upstream_window if x.strand == '+' else x.geneEnd - upstream_window, axis=1)
-		ends = reference.apply(lambda x: x.geneStart + downstream_window if x.strand == '+' else x.geneEnd + downstream_window, axis=1)
-
-	else:
-		starts = reference.apply(lambda x: x.geneStart - upstream_window, axis=1)
-		ends = reference.apply(lambda x: x.geneEnd + downstream_window, axis=1)
-
-	intervals = zip(starts.values, ends.values, reference.to_dict(orient='records'))
-
-	tree = IntervalTree.from_tuples(intervals)
-
-	return tree
-
-
-def IntervalTree_from_motifs(motifs):
-	"""
-	Arguments:
-		motifs (dataframe): Must be a dataframe with motifStart and motifEnd columns
-
-	Returns:
-		IntervalTree: of motifs
-	"""
-
-	intervals = zip(motifs.motifStart.values, motifs.motifEnd.values, motifs.to_dict(orient='records'))
 
 	tree = IntervalTree.from_tuples(intervals)
 
@@ -542,25 +314,26 @@ def intersection_of_dict_of_intervaltree(A, B):
 	return intersection
 
 
-def intersection_of_three_dicts_of_intervaltrees(A, B, C):
+def type_of_peak(row):
 	"""
 	Arguments:
-		A (dict): is a dictionary of {chrom (str): IntervalTree}
-		B (dict): is a dictionary of {chrom (str): IntervalTree}
-		C (dict): is a dictionary of {chrom (str): IntervalTree}
+		row (pd.Series): A row of data from a dataframe with peak and gene information
 
 	Returns:
-		dict: {keys shared between A, B and C: {intervals in A: [[list of overlapping intervals in B], [list of overlapping intervals in C]]} }
+		str: a name for the relationship between the peak and the gene:
+				- upstream if the start of the peak is more than 2kb above the start of the gene
+				- promoter if the start of the peak is above the start of the gene
+				- downstream if the start of the peak is below the start of the gene
 	"""
 
-	logger.info('Computing intersection operation of three IntervalTrees for each chromosome...')
-
-	# See `intersection_of_dict_of_intervaltree` (above) for programmer's notes. This function is nearly identical.
-	common_keys = set(A.keys()).intersection( set(B.keys()) ).intersection( set(C.keys()) )
-
-	intersection = [(a.data, [b.data for b in B[key].search(a)],
-							 [c.data for c in C[key].search(a)] ) for key in common_keys for a in A[key]]
-
-	return intersection
-
+	if row['geneStrand'] == '+':
+		if -2000 >= row['peakStart'] - row['geneStart']: 	return 'upstream'
+		if -2000 < row['peakStart'] - row['geneStart'] < 0: return 'promoter'
+		if 0 <= row['peakStart'] - row['geneStart']: 		return 'downstream'  # a.k.a. row['peakStart'] < row['geneStart']
+		return 'intergenic'
+	if row['geneStrand'] == '-':
+		if 2000 <= row['peakEnd'] - row['geneEnd']: 	return 'upstream'
+		if 2000 > row['peakEnd'] - row['geneEnd'] > 0: 	return 'promoter'
+		if 0 >= row['peakEnd'] - row['geneEnd']: 		return 'downstream'  # a.k.a. row['peakEnd'] < row['geneEnd']
+		return 'intergenic'
 
