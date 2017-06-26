@@ -190,14 +190,15 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 	It then returns all pairs of motifs and genes which were found local to peaks.
 
 	Arguments:
-		garnet_file (str): filepath or file object for the garnet file.
-		peaks_file_or_list_of_peaks_files (str or FILE or list): filepath or file object for the peaks file, or list of such paths or objects
+		garnet_file (str): filepath to the garnet file.
+		peaks_file_or_list_of_peaks_files (str or list): filepath of the peaks file, or list of such paths
 
 	Returns:
 		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
 			with the restriction that these motifs and genes must have been found near a peak.
 	"""
-
+	logger.info("Mapping peaks against genome from garnet-file "+garnet_file)
+	logger.info("Unpacking garnet file...")
 	genome = parse_garnet_file(garnet_file)
 
 	# peaks_file_or_list_of_peaks_files is either a filepath or FILE, or a list of filepaths or FILEs.
@@ -209,8 +210,10 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 
 	for peaks_file in list_of_peaks_files:
 
+		logger.info("Constructing representation of peaks file "+peaks_file+"...")
 		peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
 
+		logger.info("Computing intersection of peaks with reference...")
 		peaks_with_associated_genome_regions = intersection_of_dict_of_intervaltree(peaks, genome)
 
 		peak_regions = [{**motif, **region} for peak, region in peaks_with_associated_genome_regions]
