@@ -369,7 +369,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 		with open(options['output_dir']+"summary.html", "w") as summary_output_file:
 			summary_output_file.write(html_output)
 
-	return imputed_TF_features_dataframes
+	return imputed_TF_features_dataframe
 
 
 def batch_scan_epigenomics_files(list_of_peaks_files, known_genes_file, motifs_file, options):
