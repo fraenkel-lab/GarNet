@@ -87,6 +87,65 @@ def parse_tabular_expression_file(expression_file):
 	return pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
 
 
+def parse_known_genes_file(known_genes_file, kgXref_file=None):
+	"""
+	Parse the RefSeq known genes file into a pandas dataframe
+
+	The known genes file format is the following:
+	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
+
+	Arguments:
+		known_genes_file (string or FILE): file procured from RefSeq with full list of genes in genome
+		kgXref_file (string or FILE): (optional) additional "Cross Reference" file with more details on those genes
+
+	Returns:
+		dataframe: known genes dataframe
+	"""
+
+	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
+
+	known_genes_dataframe = pd.read_csv(known_genes_file, delimiter='\t', names=known_genes_fieldnames)
+
+	known_genes_dataframe.rename(index=str, columns={"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"}, inplace=True)
+
+	if kgXref_file:
+
+		kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
+		kgXref_dataframe = pd.read_csv(kgXref_file, delimiter='\t', names=kgXref_fieldnames)
+
+		known_genes_dataframe = known_genes_dataframe.merge(kgXref_dataframe, left_on='geneName', right_on='kgID', how='left')
+		known_genes_dataframe.rename(index=str, columns={"geneName":"ucID", "geneSymbol":"geneName"}, inplace=True)
+
+	else: logger.info('Program was not supplied with a kgXref file, gene names will only be supplied as kgID')
+
+	return known_genes_dataframe
+
+
+def parse_motifs_file(motifs_file):
+	"""
+	Parse the MotifMap BED file listing Transcription Factor Binding Motifs in the genome
+
+	Arguments:
+		motifs_file (string or FILE): file procured from MotifMap with full list of TF binding sites in the genome
+
+	Returns:
+		dataframe: motif dataframe
+	"""
+
+	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+	# motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
+	# motif_fieldnames = ["motifName", "chrom", "motifStrand", "motifScore", "motifStart", "motifEnd"]
+
+	motif_dataframe = pd.read_csv(motifs_file, delimiter='\t', names=motif_fieldnames)
+
+	# motif_dataframe['motifID'], motif_dataframe['motifName'] = motif_dataframe['name'].str.split('=', 1).str
+
+	# motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
+	motif_dataframe.rename(index=str, columns={"start":"motifStart", "stop":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
+
+	return motif_dataframe
+
+
 def save_as_pickled_object(obj, directory, filename):
 	"""
 	This is a defensive way to write pickle.write, allowing for very large files on all platforms
@@ -143,27 +202,25 @@ def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files):
 
 	# peaks_file_or_list_of_peaks_files is either a filepath or FILE, or a list of filepaths or FILEs.
 	# Let's operate on a list in either case, so if it's a single string, put it in a list. #TODO, this will break if it's a single FILE.
-	if isinstance(peaks_file_or_list_of_peaks_files, str): peaks_files = [peaks_file_or_list_of_peaks_files]
-	else: peaks_files = peaks_file_or_list_of_peaks_files
+	if isinstance(peaks_file_or_list_of_peaks_files, list): list_of_peaks_files = peaks_file_or_list_of_peaks_files
+	else: list_of_peaks_files = [peaks_file_or_list_of_peaks_files]
 
 	output = []
 
-	for peaks_file in peaks_files:
+	for peaks_file in list_of_peaks_files:
 
 		peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
 
-		peaks_with_associated_genes_and_motifs = intersection_of_dict_of_intervaltree(peaks, genome)
+		peaks_with_associated_genome_regions = intersection_of_dict_of_intervaltree(peaks, genome)
 
-		motifs_and_genes = [{**motif, **gene, **peak} for peak, genes, motifs in peaks_with_associated_genes_and_motifs for gene in genes for motif in motifs]
+		peak_regions = [{**motif, **region} for peak, region in peaks_with_associated_genome_regions]
 
 		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
-		motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
+		peak_regions = pd.DataFrame.from_records(peak_regions, columns=columns_to_output)
 
 		# Should probably map type_of_peak here
 
-		output.append(motifs_and_genes)
-
-	GarNetDB.close()
+		output.append(peak_regions)
 
 	# conversely, if this function was passed a single file, return a single dataframe
 	if len(output) == 1: output = output[0]
@@ -231,6 +288,36 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 ######################################## Private Functions ########################################
 
+def construct_garnet_file(known_genes_file, motifs_file, options):
+	"""
+	Construct a representation of the genome to which to map peaks.
+
+	This function searches for overlap of motifs and genes, and writes a file of motif / gene pairs.
+
+	Arguments:
+		known_genes_file (str or FILE): filepath or file object for the known genes file
+		motifs_file (str or FILE): filepath or file object for the motifs file
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+		kgXref_file (str or FILE): filepath or file object for the known genes reference file
+
+	Returns:
+		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
+	"""
+
+	reference = dict_of_IntervalTree_from_known_genes_file(known_genes_file, options)
+	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
+
+	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
+
+	motifs_and_genes = [{**motif, **gene} for motif, gene in motifs_with_associated_genes]
+
+	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
+	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
+	motifs_and_genes['motif_to_gene_distance'] = motifs_and_genes['motifStart'] - motifs_and_genes['geneStart']
+
+	return motifs_and_genes
+
+
 def dict_of_IntervalTree_from_peak_file(peaks_file):
 	"""
 	Arguments:
@@ -251,6 +338,43 @@ def dict_of_IntervalTree_from_peak_file(peaks_file):
 		save_as_pickled_object(peaks, output_dir, 'peaks_IntervalTree_dictionary.pickle')
 
 	return peaks
+
+
+def dict_of_IntervalTree_from_known_genes_file(known_genes_file, options):
+	"""
+	Arguments:
+		known_genes_file (str or FILE): filepath or file object for the known_genes file
+		options (dict): options which may come from the argument parser.
+
+	Returns:
+		dict: dictionary of chromosome to IntervalTree of known genes
+	"""
+
+	logger.info('Parsing known genes file(s)...')
+	reference = parse_known_genes_file(known_genes_file, kgXref_file=options.get('kgXref_file'))
+	reference = group_by_chromosome(reference)
+	logger.info('Parse complete, constructing IntervalTrees...')
+	reference = {chrom: IntervalTree_from_reference(genes, options) for chrom, genes in reference.items()}
+
+	return reference
+
+
+def dict_of_IntervalTree_from_motifs_file(motifs_file):
+	"""
+	Arguments:
+		motifs_file (str or FILE): filepath or file object for the motifs file
+
+	Returns:
+		dict: dictionary of chromosome to IntervalTree of TF binding motifs
+	"""
+
+	logger.info('Parsing motifs file...')
+	motifs = parse_motifs_file(motifs_file)
+	motifs = group_by_chromosome(motifs)
+	logger.info('Parse complete, constructing IntervalTrees...')
+	motifs = {chrom: IntervalTree_from_motifs(chromosome_motifs) for chrom, chromosome_motifs in motifs.items()}
+
+	return motifs
 
 
 def group_by_chromosome(dataframe):
@@ -275,6 +399,51 @@ def IntervalTree_from_peaks(peaks):
 	"""
 
 	intervals = zip(peaks.peakStart.values, peaks.peakEnd.values, peaks.to_dict(orient='records'))
+
+	tree = IntervalTree.from_tuples(intervals)
+
+	return tree
+
+
+def IntervalTree_from_reference(reference, options):
+	"""
+	Arguments:
+		reference (dataframe): Must be a dataframe with `strand`, `geneStart`, and `geneEnd` columns
+		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool}
+
+	Returns:
+		IntervalTree: of genes from the reference
+	"""
+
+	upstream_window = options.get('upstream_window') or 2000
+	downstream_window = options.get('downstream_window') or 2000
+	window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site = options.get('tss') or False
+
+	if window_ends_downstream_from_transcription_start_site_instead_of_transcription_end_site:
+		starts = reference.apply(lambda x: x.geneStart - upstream_window if x.strand == '+' else x.geneEnd - upstream_window, axis=1)
+		ends = reference.apply(lambda x: x.geneStart + downstream_window if x.strand == '+' else x.geneEnd + downstream_window, axis=1)
+
+	else:
+		starts = reference.apply(lambda x: x.geneStart - upstream_window, axis=1)
+		ends = reference.apply(lambda x: x.geneEnd + downstream_window, axis=1)
+
+	intervals = zip(starts.values, ends.values, reference.to_dict(orient='records'))
+
+	tree = IntervalTree.from_tuples(intervals)
+
+	return tree
+
+
+def IntervalTree_from_motifs(motifs):
+	"""
+	Arguments:
+		motifs (dataframe): Must be a dataframe with motifStart and motifEnd columns
+
+	Returns:
+		IntervalTree: of motifs
+	"""
+
+	intervals = zip(motifs.motifStart.astype(int).values, motifs.motifEnd.astype(int).values, motifs.to_dict(orient='records'))
 
 	tree = IntervalTree.from_tuples(intervals)
 
