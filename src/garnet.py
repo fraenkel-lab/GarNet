@@ -51,7 +51,7 @@ def parse_garnet_file(filepath_or_file_object):
 	return garnet_file
 
 
-def parse_peaks_bed_file(peaks_file):
+def parse_peaks_file(peaks_file):
 	"""
 	Parse a BED file with peaks from an epigenomics assay (e.g. ATAC) into a dataframe
 
@@ -73,7 +73,7 @@ def parse_peaks_bed_file(peaks_file):
 	return peaks_dataframe
 
 
-def parse_tabular_expression_file(expression_file):
+def parse_expression_file(expression_file):
 	"""
 	Parse gene expression scores from a transcriptomics assay (e.g. RNAseq) into a dataframe
 
@@ -176,10 +176,6 @@ def try_to_load_as_pickled_object_or_None(filepath):
 	return obj
 
 
-def output(dataframe, output_dir, filename):
-	dataframe.to_csv(os.path.join(output_dir, filename), sep='\t', header=True, index=False)
-
-
 ######################################### Public Functions #########################################
 
 def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
@@ -198,7 +194,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 			with the restriction that these motifs and genes must have been found near a peak.
 	"""
 	logger.info("Mapping peaks against genome from garnet-file "+garnet_file)
-	logger.info("Unpacking garnet file...")
+	logger.info("Unpacking garnet file (this can take a while)... ")
 	genome = parse_garnet_file(garnet_file)
 
 	# peaks_file_or_list_of_peaks_files is either a filepath or FILE, or a list of filepaths or FILEs.
@@ -213,12 +209,11 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 		logger.info("Constructing representation of peaks file "+peaks_file+"...")
 		peaks = dict_of_IntervalTree_from_peak_file(peaks_file)
 
-		logger.info("Computing intersection of peaks with reference...")
-		peaks_with_associated_genome_regions = intersection_of_dict_of_intervaltree(peaks, genome)
+		peaks_with_associated_genomic_regions = intersection_of_dict_of_intervaltree(peaks, genome)
 
-		peak_regions = [{**motif, **region} for peak, region in peaks_with_associated_genome_regions]
+		peak_regions = [{**peak, **region} for peak, region in peaks_with_associated_genomic_regions]
 
-		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneSymbol", "geneStart", "geneEnd", "peakName"]
+		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "peakName"]
 		peak_regions = pd.DataFrame.from_records(peak_regions, columns=columns_to_output)
 
 		# Should probably map type_of_peak here
@@ -242,7 +237,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	Arguments:
 		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
-		expression_file (str or FILE): a tsv file of expression data, with geneSymbol, score columns
+		expression_file (str or FILE): a tsv file of expression data, with geneName, score columns
 		options (dict): {"output_dir": string (optional)})
 
 	Returns:
@@ -251,12 +246,12 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	expression_dataframe = parse_expression_file(expression_file)
 
-	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneSymbol', right_on='name', how='inner')
+	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
 
-	# the same geneSymbol might have different names but since the expression is geneSymbol-wise
+	# the same geneName might have different names but since the expression is geneName-wise
 	# these additional names cause bogus regression p-values. Get rid of them here.
-	if 'geneSymbol' in motifs_genes_and_expression_levels.columns:
-		motifs_genes_and_expression_levels.drop_duplicates(subset=['geneSymbol', 'motifID'], inplace=True)
+	if 'geneName' in motifs_genes_and_expression_levels.columns:
+		motifs_genes_and_expression_levels.drop_duplicates(subset=['geneName', 'motifName'], inplace=True)
 	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
@@ -278,7 +273,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
 
-	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])
+	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])  ## also include the targets
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
 	if options.get('output_dir'):
@@ -314,7 +309,7 @@ def construct_garnet_file(known_genes_file, motifs_file, options):
 
 	motifs_and_genes = [{**motif, **gene} for motif, gene in motifs_with_associated_genes]
 
-	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifID", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
+	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
 	motifs_and_genes['motif_to_gene_distance'] = motifs_and_genes['motifStart'] - motifs_and_genes['geneStart']
 
@@ -335,10 +330,6 @@ def dict_of_IntervalTree_from_peak_file(peaks_file):
 	peaks = group_by_chromosome(peaks)
 	logger.info('  - Parse complete, constructing IntervalTrees...')
 	peaks = {chrom: IntervalTree_from_peaks(chromosome_peaks) for chrom, chromosome_peaks in peaks.items()}
-
-	if output_dir:
-		logger.info('  - IntervalTree construction complete, saving pickle file for next time.')
-		save_as_pickled_object(peaks, output_dir, 'peaks_IntervalTree_dictionary.pickle')
 
 	return peaks
 
