@@ -33,13 +33,10 @@ should suffice. GarNet depends on numpy, pandas, statsmodels, and [IntervalTree]
 
 ## Documentataion
 
-GarNet has 5 public methods:
+GarNet has 2 public methods:
 
-- **`map_known_genes_to_peaks`** which finds nearby genes to each of the peaks.
-- **`map_motifs_to_peaks`** which finds nearby motifs to each of the peaks
-- **`map_known_genes_and_motifs_to_peaks`** which gives you back all pairs of genes and motifs local to the same peaks
-- **`map_known_genes_to_motifs`** which simply finds genes near motifs
-- **`motif_regression`** which, given a set of motifs and genes from either of the previous two functions as well as an expression profile, will
+- **`map_peaks`** which finds local groups of TF binding motifs, genes, and peaks.
+- **`TF_regression`** which, given a set of motif-gene-peak complexes (e.g. from the previous function) and a gene expression profiles (e.g. from RNA-Seq), will perform regression to predict the significance of each transcription factor to the expression profile.
 
 
 [Specific documentation about each of the functions can be found here.](https://fraenkel-lab.github.io/GarNet/html/index.html)

@@ -261,7 +261,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
-	logger.info("Performing linear regression on "+str(len(TFs_and_associated_expression_profiles))+" transcription factor expression profiles...")
+	logger.info("Performing linear regression for "+str(len(TFs_and_associated_expression_profiles))+" transcription factor expression profiles...")
 
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
 
