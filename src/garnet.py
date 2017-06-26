@@ -19,7 +19,7 @@ from intervaltree import IntervalTree
 import jinja2
 
 # list of public methods:
-__all__ = [ "parse_garnet_file", "map_peaks", "TF_regression" ]
+__all__ = [ "map_peaks", "TF_regression" ]
 
 
 templateLoader = jinja2.FileSystemLoader(searchpath=".")
@@ -182,7 +182,7 @@ def output(dataframe, output_dir, filename):
 
 ######################################### Public Functions #########################################
 
-def map_peaks(garnet_file, peaks_file_or_list_of_peaks_files):
+def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 	"""
 	Find motifs and associated genes local to peaks.
 
