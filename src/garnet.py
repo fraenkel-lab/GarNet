@@ -70,6 +70,8 @@ def parse_peaks_file(peaks_file):
 
 	peaks_dataframe = peaks_dataframe[['peakName', 'chrom', 'peakStart', 'peakEnd', 'peakScore']]
 
+	peaks_dataframe[['peakStart','peakEnd']] = peaks_dataframe[['peakStart','peakEnd']].apply(pd.to_numeric)
+
 	return peaks_dataframe
 
 
@@ -108,6 +110,8 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None):
 
 	known_genes_dataframe.rename(index=str, columns={"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"}, inplace=True)
 
+	known_genes_dataframe[['geneStart','geneEnd']] = known_genes_dataframe[['geneStart','geneEnd']].apply(pd.to_numeric)
+
 	if kgXref_file:
 
 		kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
@@ -132,16 +136,20 @@ def parse_motifs_file(motifs_file):
 		dataframe: motif dataframe
 	"""
 
+	# mm9:
+	# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+
+	# mm10: # need to double check these
+	# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+
+	# hg19:
 	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
-	# motif_fieldnames = ["chrom", "start", "end", "name", "score", "strand"]
-	# motif_fieldnames = ["motifName", "chrom", "motifStrand", "motifScore", "motifStart", "motifEnd"]
 
 	motif_dataframe = pd.read_csv(motifs_file, delimiter='\t', names=motif_fieldnames)
 
-	# motif_dataframe['motifID'], motif_dataframe['motifName'] = motif_dataframe['name'].str.split('=', 1).str
-
-	# motif_dataframe.rename(index=str, columns={"start":"motifStart", "end":"motifEnd", "score":"motifScore", "strand":"motifStrand"}, inplace=True)
 	motif_dataframe.rename(index=str, columns={"start":"motifStart", "stop":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
+
+	motif_dataframe[['motifStart','motifEnd']] = motif_dataframe[['motifStart','motifEnd']].apply(pd.to_numeric)
 
 	return motif_dataframe
 
