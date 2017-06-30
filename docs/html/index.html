@@ -165,8 +165,8 @@ please see the <a class="reference external" href="https://github.com/fraenkel-l
 <li>We&#8217;ve supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.</li>
 </ul>
 <span class="target" id="module-garnet"></span><dl class="function">
-<dt id="garnet.map_known_genes_and_motifs_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_and_motifs_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_and_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_and_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
+<dt id="garnet.map_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_peaks</code><span class="sig-paren">(</span><em>peaks_file_or_list_of_peaks_files</em>, <em>garnet_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find motifs and associated genes local to peaks.</p>
 <p>This function searches for motifs &#8220;under&#8221; peaks from an epigenomics dataset and &#8220;around&#8221; peaks for genes.
 It then returns all pairs of motifs and genes which were found local to peaks.</p>
@@ -175,10 +175,8 @@ It then returns all pairs of motifs and genes which were found local to peaks.</
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>garnet_file</strong> (<em>str</em>) &#8211; filepath to the garnet file.</li>
+<li><strong>peaks_file_or_list_of_peaks_files</strong> (<em>str</em><em> or </em><em>list</em>) &#8211; filepath of the peaks file, or list of such paths</li>
 </ul>
 </td>
 </tr>
@@ -188,85 +186,6 @@ It then returns all pairs of motifs and genes which were found local to peaks.</
 </dd>
 </dl>
 </p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="garnet.map_known_genes_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_peaks</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find all genes nearby to peaks.</p>
-<p>This function searches in the neighborhood of peaks for genes and returns each peak / gene pair
-which were found to be local to one another.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing peaks and nearby genes</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="garnet.map_motifs_to_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_motifs_to_peaks</code><span class="sig-paren">(</span><em>motifs_file</em>, <em>peaks_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_motifs_to_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_motifs_to_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find known transcription factor binding motifs motifs &#8220;below&#8221; input epigenetic peaks.</p>
-<p>This function searches for overlap of motifs and peaks, and returns peak / motif pairs.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>peaks_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the peaks file.</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing peaks and nearby transcription factor binding motifs</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="garnet.map_known_genes_to_motifs">
-<code class="descclassname">garnet.</code><code class="descname">map_known_genes_to_motifs</code><span class="sig-paren">(</span><em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_known_genes_to_motifs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_known_genes_to_motifs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Associate genes local to motifs with those motifs, without peak information.</p>
-<p>This function searches for overlap of motifs and genes, and returns motif / gene pairs.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A dataframe listing transcription factor binding motifs and nearby genes.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
@@ -300,33 +219,6 @@ summary of the regressions.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="garnet.batch_scan_epigenomics_files">
-<code class="descclassname">garnet.</code><code class="descname">batch_scan_epigenomics_files</code><span class="sig-paren">(</span><em>list_of_peaks_files</em>, <em>known_genes_file</em>, <em>motifs_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#batch_scan_epigenomics_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.batch_scan_epigenomics_files" title="Permalink to this definition">¶</a></dt>
-<dd><p>Scan each peak file for nearby motifs and genes, in the same manner as map_known_genes_and_motifs_to_peaks</p>
-<p>This function principally removes the overhead of loading and unloading and re-loading
-motifs intervaltrees and reference intervaltrees from memory, which is the most time-intensive
-operation in this package. Each of the other functions in this package is targeted towards
-individual samples, but if you receive many peaks files at once, it makes sense to analyze them
-all in one fell swoop.
-This function cannot be called from the CLI defined by the ArgParser above.
-This function writes resulting files to the specified output_dir.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>list_of_peaks_files</strong> (<em>list</em>) &#8211; a list of filepaths associated with epigenomics files</li>
-<li><strong>known_genes_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the known_genes file</li>
-<li><strong>motifs_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; filepath or file object for the motifs file</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;upstream_window&#8221;: int, &#8220;downstream_window&#8221;: int, &#8220;tss&#8221;: bool, &#8220;output_dir&#8221;: string (optional)})</li>
-</ul>
 </td>
 </tr>
 </tbody>
