@@ -1,5 +1,5 @@
 <tool id="map_peaks" name="map_peaks" version="0.4.0">
-  <description>Map MACS peaks to genomics annotations from the GarNet file</description>
+  <description>Map MACS peaks to genomics annotations of the GarNet file</description>
   <requirements>
     <requirement type="package" version="0.4.0">garnet</requirement>
   </requirements>
@@ -7,16 +7,16 @@
     GarNet
         -p $peaks_file
         -g $garnet_file
-        -o OUTPUTDIR
+        -o .
   </command>
   <inputs>
     <!-- data -->
-    <param name="peaks_file" type="data" type="bed" optional="true" label="" help="BED file containing epigenetic regions of interest" />
-    <param name="garnet_file" type="data" type="tsv" optional="true" label="" help="TSV file containing genomics annotations" />
+    <param name="peaks_file" type="data" format="bed" optional="false" label="peaks_file" help="BED file containing epigenetic regions of interest" />
+    <param name="garnet_file" type="data" format="tabular" optional="false" label="garnet_file" help="TSV file containing genomics annotations" />
   </inputs>
 
   <outputs>
-    <data name="" from_work_dir="output_dir/output_figures/-log10_P-value.png" hidden="false" />
+    <data name="" from_work_dir="" format="tabular" hidden="false" />
 
   </outputs>
   <help>
