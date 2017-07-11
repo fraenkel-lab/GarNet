@@ -59,12 +59,11 @@ def main():
 
 		# "Map Peaks + TF Regression"
 		if args.expression_file:
-			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes.tsv')
+			output(TF_regression(result_dataframe, args.expression_file, {}), args.output_dir, args.expression_file+'.prizes.tsv')
 
 	# "TF Regression"
 	elif args.expression_file and args.intermediate_file:
-		dataframe = args.intermediate_file
-		output(TF_regression(dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes.tsv')
+		output(TF_regression(args.intermediate_file, args.expression_file, {}), args.output_dir, args.expression_file+'.prizes.tsv')
 
 	else: raise Exception('GarNet requires a peaks (foreground) file and a garnet (background) file. GarNet --help for more.')
 

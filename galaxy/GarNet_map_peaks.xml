@@ -16,11 +16,11 @@
   </inputs>
 
   <outputs>
-    <data name="" from_work_dir="" format="tabular" hidden="false" />
-
+    <data name="transcription_factor_prizes" from_work_dir="" format="tabular" hidden="false" />
   </outputs>
+
   <help>
 
   </help>
-  <citations><citation type="doi"></citation></citations>
+  <!-- <citations><citation type="doi"></citation></citations> -->
 </tool>
