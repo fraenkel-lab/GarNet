@@ -1,22 +1,13 @@
-<tool id="TF_regression" name="TF_regression" version="0.2.20">
+<tool id="TF_regression" name="TF_regression" version="0.4.0">
   <description>Integrate Epigenetics and Transcriptomics data</description>
   <requirements>
-    <requirement type="package" version="0.2.20">garnet</requirement>
+    <requirement type="package" version="0.4.0">garnet</requirement>
   </requirements>
   <command>
     GarNet
         -p $peaks_file
-        -m $motifs_file
-        -g $known_genes_file
-        -x $xref_file
+        -g $garnet_file
         -e $expression_file
-        #if $upstream_window
-          --up $upstream_window
-        #end if
-        #if $downstream_window
-          --down $downstream_window
-        #end if
-        $tss
         -o OUTPUTDIR
   </command>
   <inputs>

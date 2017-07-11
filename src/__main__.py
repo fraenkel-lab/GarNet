@@ -54,6 +54,10 @@ def main():
 		if args.expression_file:
 			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes.tsv')
 
+	elif args.expression_file and args.garnet_run_file:
+		dataframe = args.garnet_run_file
+		output(TF_regression(dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes.tsv')
+
 	else: raise Exception('GarNet requires a peaks (foreground) file and a garnet (background) file. GarNet --help for more.')
 
 
