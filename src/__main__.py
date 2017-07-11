@@ -12,6 +12,8 @@ from . import map_peaks, TF_regression
 
 parser = argparse.ArgumentParser(prog="GarNet", description="""
 	Scans genome for features in the garnet file local to peaks from the peaks file.
+	Performs univariate regression of TF binding affinity to RNA expression if RNA data is supplied.
+	If intermediate file and expression are supplied, only performs TF regression step, assumes peaks already mapped.
 """, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 class FullPaths(argparse.Action):
@@ -29,6 +31,9 @@ parser.add_argument('-g', '--garnet', dest='garnet_file', type=argparse.FileType
 	help='A garnet-generated file of of the genome to search against')
 parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.FileType('r'),
 	help='a two-column tab-delimited file of genes and (relative) expression levels')
+parser.add_argument('-i', '--intermediate', dest='intermediate_file', type=argparse.FileType('r'),
+	help='a .garnet.tsv file output by this program with mapped peaks')
+
 
 parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=directory, required=True,
 	help='output directory path')
@@ -47,15 +52,18 @@ def main():
 
 	args = parser.parse_args()
 
+	# "Map Peaks"
 	if args.peaks_file and args.garnet_file:
 		result_dataframe = map_peaks(args.peaks_file, args.garnet_file)
 		output(result_dataframe, args.output_dir, args.peaks_file+'.garnet.tsv')
 
+		# "Map Peaks + TF Regression"
 		if args.expression_file:
 			output(TF_regression(result_dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes.tsv')
 
-	elif args.expression_file and args.garnet_run_file:
-		dataframe = args.garnet_run_file
+	# "TF Regression"
+	elif args.expression_file and args.intermediate_file:
+		dataframe = args.intermediate_file
 		output(TF_regression(dataframe, args.expression_file, options), args.output_dir, args.expression_file+'.prizes.tsv')
 
 	else: raise Exception('GarNet requires a peaks (foreground) file and a garnet (background) file. GarNet --help for more.')

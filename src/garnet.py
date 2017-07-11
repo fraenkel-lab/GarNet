@@ -125,25 +125,28 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None):
 	return known_genes_dataframe
 
 
-def parse_motifs_file(motifs_file):
+def parse_motifs_file(motifs_file, organism="hg19"):
 	"""
 	Parse the MotifMap BED file listing Transcription Factor Binding Motifs in the genome
 
 	Arguments:
 		motifs_file (string or FILE): file procured from MotifMap with full list of TF binding sites in the genome
+		organism (str): name of the organism, either "hg19", "mm9", or "mm10"
 
 	Returns:
 		dataframe: motif dataframe
 	"""
 
-	# mm9:
-	# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+	if organism is "mm9":
+		motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
 
-	# mm10: # need to double check these
-	# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+	# elif organism is "mm10": # TODO need to double check these
+		# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
 
-	# hg19:
-	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+	elif organism is "hg19":
+		motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+
+	else: logger.critical('organism name entered not recognized in parse_motifs_file'); sys.exit(1)
 
 	motif_dataframe = pd.read_csv(motifs_file, delimiter='\t', names=motif_fieldnames)
 
@@ -152,6 +155,20 @@ def parse_motifs_file(motifs_file):
 	motif_dataframe[['motifStart','motifEnd']] = motif_dataframe[['motifStart','motifEnd']].apply(pd.to_numeric)
 
 	return motif_dataframe
+
+
+def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe):
+	"""
+	If the argument is a dataframe, return it. Otherwise if the argument is a string, try to read a dataframe from it, and return that
+	"""
+
+	if isinstance(motifs_and_genes_file_or_dataframe, str):
+		motifs_and_genes_dataframe = pd.read_csv(motifs_and_genes_file_or_dataframe, delimiter='\t', header=0, index_col=False)
+
+	elif isinstance(motifs_and_genes_file_or_dataframe, pd.DataFrame):
+		motifs_and_genes_dataframe = motifs_and_genes_file_or_dataframe
+
+	else: logger.critical('argument not recognized as a file or a dataframe, exiting...'); sys.exit(1)
 
 
 def save_as_pickled_object(obj, directory, filename):
@@ -233,7 +250,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 	return output
 
 
-def TF_regression(motifs_and_genes_dataframe, expression_file, options):
+def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, options):
 	"""
 	Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.
 
@@ -244,7 +261,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	summary of the regressions.
 
 	Arguments:
-		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
+		motifs_and_genes_file_or_dataframe (str or dataframe): the outcome of map_known_genes_and_motifs_to_peaks, either as a dataframe or a file
 		expression_file (str or FILE): a tsv file of expression data, with geneName, score columns
 		options (dict): {"output_dir": string (optional)})
 
@@ -252,6 +269,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 		dataframe: slope and pval of linear regfression for each transcription factor.
 	"""
 
+	motifs_and_genes_dataframe = _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe)
 	expression_dataframe = parse_expression_file(expression_file)
 
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
