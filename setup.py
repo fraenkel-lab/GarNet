@@ -5,7 +5,7 @@ setup(
     packages=['GarNet'],
     package_dir={'GarNet': 'src'},
     package_data={'GarNet': ['summary.jinja']},
-    version='0.4.0',
+    version='0.4.1',
     url='https://github.com/fraenkel-lab/GarNet',
     classifiers=[
         'Programming Language :: Python :: 3.5',
