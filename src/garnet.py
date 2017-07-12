@@ -170,6 +170,8 @@ def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe
 
 	else: logger.critical('argument not recognized as a file or a dataframe, exiting...'); sys.exit(1)
 
+	return motifs_and_genes_dataframe
+
 
 def save_as_pickled_object(obj, directory, filename):
 	"""
