@@ -125,25 +125,28 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None):
 	return known_genes_dataframe
 
 
-def parse_motifs_file(motifs_file):
+def parse_motifs_file(motifs_file, organism="hg19"):
 	"""
 	Parse the MotifMap BED file listing Transcription Factor Binding Motifs in the genome
 
 	Arguments:
 		motifs_file (string or FILE): file procured from MotifMap with full list of TF binding sites in the genome
+		organism (str): name of the organism, either "hg19", "mm9", or "mm10"
 
 	Returns:
 		dataframe: motif dataframe
 	"""
 
-	# mm9:
-	# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+	if organism is "mm9":
+		motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
 
-	# mm10: # need to double check these
-	# motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+	elif organism is "mm10":
+		motif_fieldnames = ["stdevhits", "ZScore", "BLS", "name", "chromosome", "FDR_lower", "FDR", "orientation", "start", "LOD", "cid", "strand", "realhits", "NLOD", "BBLS", "medianhits", "stop", "FDR_upper", "accession"]
 
-	# hg19:
-	motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+	elif organism is "hg19":
+		motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+
+	else: logger.critical('organism name entered not recognized in parse_motifs_file'); sys.exit(1)
 
 	motif_dataframe = pd.read_csv(motifs_file, delimiter='\t', names=motif_fieldnames)
 
@@ -152,6 +155,22 @@ def parse_motifs_file(motifs_file):
 	motif_dataframe[['motifStart','motifEnd']] = motif_dataframe[['motifStart','motifEnd']].apply(pd.to_numeric)
 
 	return motif_dataframe
+
+
+def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe):
+	"""
+	If the argument is a dataframe, return it. Otherwise if the argument is a string, try to read a dataframe from it, and return that
+	"""
+
+	if isinstance(motifs_and_genes_file_or_dataframe, str):
+		motifs_and_genes_dataframe = pd.read_csv(motifs_and_genes_file_or_dataframe, delimiter='\t', header=0, index_col=False)
+
+	elif isinstance(motifs_and_genes_file_or_dataframe, pd.DataFrame):
+		motifs_and_genes_dataframe = motifs_and_genes_file_or_dataframe
+
+	else: logger.critical('argument not recognized as a file or a dataframe, exiting...'); sys.exit(1)
+
+	return motifs_and_genes_dataframe
 
 
 def save_as_pickled_object(obj, directory, filename):
@@ -224,7 +243,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "peakName"]
 		peak_regions = pd.DataFrame.from_records(peak_regions, columns=columns_to_output)
 
-		# Should probably map type_of_peak here
+		peak_regions = peak_regions.apply(type_of_peak, axis=1)
 
 		output.append(peak_regions)
 
@@ -233,7 +252,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 	return output
 
 
-def TF_regression(motifs_and_genes_dataframe, expression_file, options):
+def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_dir=None):
 	"""
 	Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.
 
@@ -244,14 +263,15 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 	summary of the regressions.
 
 	Arguments:
-		motifs_and_genes_dataframe (dataframe): the outcome of map_known_genes_and_motifs_to_peaks
+		motifs_and_genes_file_or_dataframe (str or dataframe): the outcome of map_known_genes_and_motifs_to_peaks, either as a dataframe or a file
 		expression_file (str or FILE): a tsv file of expression data, with geneName, score columns
-		options (dict): {"output_dir": string (optional)})
+		output_dir: (str): If you would like to output figures and a summary html page, supply an output directory
 
 	Returns:
 		dataframe: slope and pval of linear regfression for each transcription factor.
 	"""
 
+	motifs_and_genes_dataframe = _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe)
 	expression_dataframe = parse_expression_file(expression_file)
 
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
@@ -264,6 +284,7 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
+
 	logger.info("Performing linear regression for "+str(len(TFs_and_associated_expression_profiles))+" transcription factor expression profiles...")
 
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
@@ -274,19 +295,19 @@ def TF_regression(motifs_and_genes_dataframe, expression_file, options):
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-		if options.get('output_dir'):
+		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			if not os.path.exists(options['output_dir']+'regression_plots/'): os.makedirs(options['output_dir']+'regression_plots/')
-			plot.savefig(options['output_dir']+'regression_plots/' + TF_name + '.png')
+			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
+			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name + '.png'))
 
-		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
+		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], expression_profile['geneName'].tolist()))
 
-	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])  ## also include the targets
+	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
-	if options.get('output_dir'):
-		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options['output_dir']+'regression_plots/', TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
-		with open(options['output_dir']+"summary.html", "w") as summary_output_file:
+	if output_dir:
+		html_output = templateEnv.get_template("summary.jinja").render(images_dir=os.path.join(output_dir,"regression_plots",""), TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
+		with open(os.path.join(output_dir,"summary.html"), "w") as summary_output_file:
 			summary_output_file.write(html_output)
 
 	return imputed_TF_features_dataframe
