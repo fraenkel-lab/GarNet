@@ -241,7 +241,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "peakName"]
 		peak_regions = pd.DataFrame.from_records(peak_regions, columns=columns_to_output)
 
-		# Should probably map type_of_peak here
+		peak_regions = peak_regions.apply(type_of_peak, axis=1)
 
 		output.append(peak_regions)
 
@@ -250,7 +250,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 	return output
 
 
-def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, options):
+def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_dir=None):
 	"""
 	Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.
 
@@ -263,7 +263,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, options):
 	Arguments:
 		motifs_and_genes_file_or_dataframe (str or dataframe): the outcome of map_known_genes_and_motifs_to_peaks, either as a dataframe or a file
 		expression_file (str or FILE): a tsv file of expression data, with geneName, score columns
-		options (dict): {"output_dir": string (optional)})
+		output_dir: (str): If you would like to output figures and a summary html page, supply an output directory
 
 	Returns:
 		dataframe: slope and pval of linear regfression for each transcription factor.
@@ -282,6 +282,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, options):
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
+
 	logger.info("Performing linear regression for "+str(len(TFs_and_associated_expression_profiles))+" transcription factor expression profiles...")
 
 	for TF_name, expression_profile in TFs_and_associated_expression_profiles:
@@ -292,19 +293,19 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, options):
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
-		if options.get('output_dir'):
+		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
-			if not os.path.exists(options['output_dir']+'regression_plots/'): os.makedirs(options['output_dir']+'regression_plots/')
-			plot.savefig(options['output_dir']+'regression_plots/' + TF_name + '.png')
+			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
+			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name + '.png'))
 
-		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore']))
+		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], expression_profile['geneName'].tolist()))
 
-	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value"])  ## also include the targets
+	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
-	if options.get('output_dir'):
-		html_output = templateEnv.get_template("summary.jinja").render(images_dir=options['output_dir']+'regression_plots/', TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
-		with open(options['output_dir']+"summary.html", "w") as summary_output_file:
+	if output_dir:
+		html_output = templateEnv.get_template("summary.jinja").render(images_dir=os.path.join(output_dir,"regression_plots",""), TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
+		with open(os.path.join(output_dir,"summary.html"), "w") as summary_output_file:
 			summary_output_file.write(html_output)
 
 	return imputed_TF_features_dataframe
