@@ -138,10 +138,10 @@ def parse_motifs_file(motifs_file, organism="hg19"):
 	"""
 
 	if organism is "mm9":
-		motif_fieldnames = ["ZScore", "BBLS", "FDR", "stop", "FDR", "strand", "BLS", "accession", "FDR", "cid", "medianhits", "start", "name", "orientation", "chrom", "stdevhits", "LOD", "NLOD", "realhits"]
+		motif_fieldnames = ["ZScore","BBLS","FDR","stop","FDR","strand","BLS","accession","FDR","cid","medianhits","start","name","orientation","chrom","stdevhits","LOD","NLOD","realhits"]
 
 	elif organism is "mm10":
-		motif_fieldnames = ["stdevhits", "ZScore", "BLS", "name", "chromosome", "FDR_lower", "FDR", "orientation", "start", "LOD", "cid", "strand", "realhits", "NLOD", "BBLS", "medianhits", "stop", "FDR_upper", "accession"]
+		motif_fieldnames = ["stdevhits","ZScore","BLS","name","chrom","FDR_lower","FDR","orientation","start","LOD","cid","strand","realhits","NLOD","BBLS","medianhits","stop","FDR_upper","accession"]
 
 	elif organism is "hg19":
 		motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
