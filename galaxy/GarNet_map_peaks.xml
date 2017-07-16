@@ -1,7 +1,7 @@
-<tool id="map_peaks" name="map_peaks" version="0.4.0">
+<tool id="map_peaks" name="map_peaks" version="0.4.2">
   <description>Map MACS peaks to genomics annotations of the GarNet file</description>
   <requirements>
-    <requirement type="package" version="0.4.0">garnet</requirement>
+    <requirement type="package" version="0.4.2">garnet</requirement>
   </requirements>
   <command>
     GarNet
@@ -24,3 +24,4 @@
   </help>
   <!-- <citations><citation type="doi"></citation></citations> -->
 </tool>
+

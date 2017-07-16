@@ -89,7 +89,7 @@ def parse_expression_file(expression_file):
 	return pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
 
 
-def parse_known_genes_file(known_genes_file, kgXref_file=None):
+def parse_known_genes_file(known_genes_file, kgXref_file=None, organism="hg19"):
 	"""
 	Parse the RefSeq known genes file into a pandas dataframe
 
@@ -106,6 +106,7 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None):
 
 	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
 
+
 	known_genes_dataframe = pd.read_csv(known_genes_file, delimiter='\t', names=known_genes_fieldnames)
 
 	known_genes_dataframe.rename(index=str, columns={"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"}, inplace=True)
@@ -114,7 +115,17 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None):
 
 	if kgXref_file:
 
-		kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
+		if organism == "hg19":
+			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
+
+		elif organism == "mm9":
+			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
+
+		elif organism == "mm10":
+			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description","rfamAcc","tRnaName"]
+
+		else: logger.critical('organism name entered not recognized in parse_known_genes_file'); sys.exit(1)
+
 		kgXref_dataframe = pd.read_csv(kgXref_file, delimiter='\t', names=kgXref_fieldnames)
 
 		known_genes_dataframe = known_genes_dataframe.merge(kgXref_dataframe, left_on='geneName', right_on='kgID', how='left')
