@@ -1,26 +1,24 @@
-<tool id="TF_regression" name="TF_regression" version="0.4.2">
+<tool id="TF_regression" name="TF_regression" version="0.4.3">
   <description>Integrate Epigenetics and Transcriptomics data</description>
   <requirements>
-    <requirement type="package" version="0.4.2">garnet</requirement>
+    <requirement type="package" version="0.4.3">garnet</requirement>
   </requirements>
   <command>
-    GarNet
-        -i $intermediate_file
-        -e $expression_file
-        -o .
+    GarNet --intermediate $intermediate_file --expression $expression_file --output .
   </command>
   <inputs>
     <!-- data -->
-    <param name="expression_file" type="data" format="tabular" optional="false" label="RNA" help="File Containing results of RNA-Seq experiment" />
+    <param name="expression_file" type="data" format="tabular" optional="false" label="Expression File" help="File Containing results of RNA-Seq experiment" />
     <param name="intermediate_file" type="data" format="tabular" optional="false" label="Map_Peaks Output" help="File Containing results of GarNet.map_peaks" />
   </inputs>
 
   <outputs>
-    <data name="" from_work_dir="" format="tabular" hidden="false" />
+    <data name="Garnet TF Prizes" from_work_dir="*.prizes.tsv" format="tabular" hidden="false" />
 
   </outputs>
   <help>
 
   </help>
-  <citations><citation type="doi"></citation></citations>
+  <!-- <citations><citation type="doi"></citation></citations> -->
 </tool>
+

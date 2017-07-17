@@ -25,15 +25,14 @@ def directory(dirname):
 	if not os.path.isdir(dirname): raise argparse.ArgumentTypeError(dirname + " is not a directory")
 	else: return dirname
 
-parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'),
+parser.add_argument('-p', '--peaks', dest='peaks_file', type=argparse.FileType('r'), required=False,
 	help='BED file containing genomic regions of interest')  # Add future file formats as we support them
-parser.add_argument('-g', '--garnet', dest='garnet_file', type=argparse.FileType('r'),
+parser.add_argument('-g', '--garnet', dest='garnet_file', type=argparse.FileType('r'), required=False,
 	help='A garnet-generated file of of the genome to search against')
-parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.FileType('r'),
+parser.add_argument('-e', '--expression', dest='expression_file', type=argparse.FileType('r'), required=False,
 	help='a two-column tab-delimited file of genes and (relative) expression levels')
-parser.add_argument('-i', '--intermediate', dest='intermediate_file', type=argparse.FileType('r'),
+parser.add_argument('-i', '--intermediate', dest='intermediate_file', type=argparse.FileType('r'), required=False,
 	help='a .garnet.tsv file output by this program with mapped peaks')
-
 
 parser.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=directory, required=True,
 	help='output directory path')

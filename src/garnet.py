@@ -228,8 +228,7 @@ def map_peaks(peaks_file_or_list_of_peaks_files, garnet_file):
 		peaks_file_or_list_of_peaks_files (str or list): filepath of the peaks file, or list of such paths
 
 	Returns:
-		dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes
-			with the restriction that these motifs and genes must have been found near a peak.
+		pd.dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes with the restriction that these motifs and genes must have been found near a peak.
 	"""
 	logger.info("Mapping peaks against genome from garnet-file "+garnet_file)
 	logger.info("Unpacking garnet file (this can take a while)... ")
@@ -279,7 +278,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		output_dir: (str): If you would like to output figures and a summary html page, supply an output directory
 
 	Returns:
-		dataframe: slope and pval of linear regfression for each transcription factor.
+		pd.dataframe: slope, pval, and gene targets for each transcription factor.
 	"""
 
 	motifs_and_genes_dataframe = _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe)
