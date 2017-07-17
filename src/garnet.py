@@ -477,6 +477,8 @@ def IntervalTree_from_motifs(motifs):
 		IntervalTree: of motifs
 	"""
 
+	motifs = motifs.dropna(subset=['motifStart', 'motifEnd'])
+
 	intervals = zip(motifs.motifStart.astype(int).values, motifs.motifEnd.astype(int).values, motifs.to_dict(orient='records'))
 
 	tree = IntervalTree.from_tuples(intervals)
