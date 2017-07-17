@@ -278,7 +278,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		output_dir: (str): If you would like to output figures and a summary html page, supply an output directory
 
 	Returns:
-		dataframe: slope and pval of linear regfression for each transcription factor.
+		pd.dataframe: slope, pval, and gene targets for each transcription factor.
 	"""
 
 	motifs_and_genes_dataframe = _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe)

@@ -160,9 +160,8 @@
 please see the <a class="reference external" href="https://github.com/fraenkel-lab/GarNet">Readme</a>. To report an error, please refer to the <a class="reference external" href="https://github.com/fraenkel-lab/GarNet/issues">Issues</a>.</p>
 <p>Some important notes:</p>
 <ul class="simple">
-<li>GarNet uses tab-delimited files, otherwise known as tsv&#8217;s. BED files are already tsv, so no worries there.</li>
-<li>GarNet saves intermediate files for all input datasets, which it can use instead of raw tsv&#8217;s saving computation and time. Those are pickled IntervalTrees (files which end in .pickle)</li>
-<li>We&#8217;ve supplied such intermediate files for motifs and genes in the repo, leaving it to you to supply the peaks file and the expression file.</li>
+<li>GarNet mostly uses tab-delimited files, otherwise known as tsv&#8217;s. BED files are already tsv, so no worries there.</li>
+<li>In order to map peaks, a genome annotation file is required, processed into a &#8220;GarNet File&#8221;. There is such a file for hg19, mm9, and mm10.</li>
 </ul>
 <span class="target" id="module-garnet"></span><dl class="function">
 <dt id="garnet.map_peaks">
@@ -180,15 +179,10 @@ It then returns all pairs of motifs and genes which were found local to peaks.</
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
-<dt>a dataframe with rows of transcription factor binding motifs and nearby genes</dt>
-<dd><p class="first last">with the restriction that these motifs and genes must have been found near a peak.</p>
-</dd>
-</dl>
-</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a dataframe with rows of transcription factor binding motifs and nearby genes with the restriction that these motifs and genes must have been found near a peak.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pd.dataframe</p>
 </td>
 </tr>
 </tbody>
@@ -197,7 +191,7 @@ It then returns all pairs of motifs and genes which were found local to peaks.</
 
 <dl class="function">
 <dt id="garnet.TF_regression">
-<code class="descclassname">garnet.</code><code class="descname">TF_regression</code><span class="sig-paren">(</span><em>motifs_and_genes_dataframe</em>, <em>expression_file</em>, <em>options</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#TF_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.TF_regression" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">garnet.</code><code class="descname">TF_regression</code><span class="sig-paren">(</span><em>motifs_and_genes_file_or_dataframe</em>, <em>expression_file</em>, <em>output_dir=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#TF_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.TF_regression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.</p>
 <p>This function parses an expression file of two columns: gene symbol and expression value, and
 merges the expression profile into the motifs and genes file, resulting in information about
@@ -209,16 +203,16 @@ summary of the regressions.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>motifs_and_genes_dataframe</strong> (<em>dataframe</em>) &#8211; the outcome of map_known_genes_and_motifs_to_peaks</li>
-<li><strong>expression_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; a tsv file of expression data, with geneSymbol, score columns</li>
-<li><strong>options</strong> (<em>dict</em>) &#8211; {&#8220;output_dir&#8221;: string (optional)})</li>
+<li><strong>motifs_and_genes_file_or_dataframe</strong> (<em>str</em><em> or </em><em>dataframe</em>) &#8211; the outcome of map_known_genes_and_motifs_to_peaks, either as a dataframe or a file</li>
+<li><strong>expression_file</strong> (<em>str</em><em> or </em><em>FILE</em>) &#8211; a tsv file of expression data, with geneName, score columns</li>
+<li><strong>output_dir</strong> &#8211; (str): If you would like to output figures and a summary html page, supply an output directory</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">slope and pval of linear regfression for each transcription factor.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">slope, pval, and gene targets for each transcription factor.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">dataframe</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pd.dataframe</p>
 </td>
 </tr>
 </tbody>
