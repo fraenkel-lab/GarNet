@@ -1,20 +1,8 @@
-matrix:
-  include:
-    - sudo: required
-      services:
-        - docker
-    - os: osx
-
-script:
-  - pip install git+https://github.com/joerick/cibuildwheel@c3565d5025566dcf4b795eef8d40f38a12872151
-  - cibuildwheel --output-dir wheelhouse
-  - |
-    if [[ $TRAVIS_TAG ]]; then
-      python -m pip install twine
-      python -m twine upload wheelhouse/pcst_fast-*.whl
-    fi
-env:
-  global:
-    - CIBW_SKIP="cp26-* cp27-* cp33-* cp34-*"
-    - TWINE_USERNAME=zfrenchee
-      # Note: TWINE_PASSWORD is set in Travis settings
+deploy:
+  provider: pypi
+  user: "zfrenchee"
+  password:
+    secure: "RncxwLYBXUMrz5LhTBwS7UpLsIsYUkH63ackMRckz7rC7BfcbsLH2Fk+0HVoGXz3j4ukPzu1/HbS+aa7FWfpvLsqbZz5NuNlGX6VZFPlSItV5mcA1YLCZuJdE+XoUDfd13G0VtwxIo7VAvW9cQ4zujcHTqowkJ3nbOn2+dfMBYq274UyFQKSMfLZOceCliYN1yAUtGFDa12bH8yIXuW7Fo0tu7Opx+66BnsZ2uNfZ0ynI2PvPivrTfU8PryeCkBvombJ98FoQNzvlNZXzc4SlaLAMQJGyNH5NFlrMAaZTsH6Y0kUaixgL2+CtoAR2Pk4M6l97pXgnkfKp63kYC/+MN9B+gfdf4cHQonyDLNKlTzZvbTnjq+Fu7JEOoKH1z7oGyHM51IbBvr9USPDgJh6x/0rVALKNNcgvVKSJRiEQ7A04MKJ4eOmt5sOZNFIfM75KZ19CNEnKmnnJ6J1r+UTNRMnKoUC9BqaWfNQk/hSC2ernP0XKCEzCght5u2easS8jpHg4lyGhZDl8DYlgNAmgggBGTgTg8iBFoxOtDze7ThNR3942hgGn5JmI8CESpmO6zIq9/j+E8KGXt5N9YNtpTj/2aeCQdHt1hvxWviJdqvGENw7R4CNK9lkkUnaABZBsuCQzo7mKOOy9/O652qXgv5xxMlAja0hgzzRSlcfJ1o="
+  on:
+    tags: true
+  distributions: "bdist_wheel"
