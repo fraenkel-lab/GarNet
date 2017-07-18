@@ -15,6 +15,6 @@ script:
     fi
 env:
   global:
-    - CIBW_SKIP="cp26-* cp27-* cp34-*"
+    - CIBW_SKIP="cp26-* cp27-* cp33-* cp34-*"
     - TWINE_USERNAME=zfrenchee
       # Note: TWINE_PASSWORD is set in Travis settings
