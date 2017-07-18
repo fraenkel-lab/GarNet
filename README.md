@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.org/fraenkel-lab/GarNet.svg)](https://travis-ci.org/fraenkel-lab/GarNet)
+
 # GarNet
 
 Many biological labs commonly use RNA-seq or other high-throughput technologies to assess the gene expression changes in their experimental systems. In order to produce these gene expression changes, regulatory machinary in the cell must have caused changes in transcription. Assessing the effect of each factor of this regulatory machinary directly is often difficult. An open question, then, is how to use gene expression data to predict which cis-regulatory elements, such as transcription factor proteins, were at play in producing those gene expression changes.
