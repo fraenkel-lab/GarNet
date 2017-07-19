@@ -14,7 +14,8 @@
 
   <outputs>
     <data name="Garnet TF Prizes" from_work_dir="*.prizes.tsv" format="tabular" hidden="false" />
-
+    <data name="Report" from_work_dir="summary.html" format="html" hidden="false" />
+    <data name="Regression Plots" from_work_dir="regression_plots/*.jpg" format="jpg" hidden="true" />
   </outputs>
   <help>
 

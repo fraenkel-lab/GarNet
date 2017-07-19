@@ -7,7 +7,7 @@ import sys
 import argparse
 
 # import this module
-from . import map_peaks, TF_regression
+from GarNet import map_peaks, TF_regression
 
 
 parser = argparse.ArgumentParser(prog="GarNet", description="""

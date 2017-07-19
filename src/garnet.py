@@ -308,7 +308,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
-			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name + '.png'))
+			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name + '.jpg'))
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], expression_profile['geneName'].tolist()))
 

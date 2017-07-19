@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
 
-from GarNet.garnet import map_peaks, TF_regression
+from .garnet import map_peaks, TF_regression
 
