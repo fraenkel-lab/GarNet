@@ -1,7 +1,7 @@
-<tool id="TF_regression" name="TF_regression" version="0.4.3">
+<tool id="TF_regression" name="TF_regression" version="0.4.5">
   <description>Integrate Epigenetics and Transcriptomics data</description>
   <requirements>
-    <requirement type="package" version="0.4.3">garnet</requirement>
+    <requirement type="package" version="0.4.5">garnet</requirement>
   </requirements>
   <command>
     GarNet --intermediate $intermediate_file --expression $expression_file --output .
