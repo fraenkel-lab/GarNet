@@ -2,6 +2,7 @@
 
 # Core python modules
 import sys
+import os
 
 # Peripheral python modules
 import argparse
