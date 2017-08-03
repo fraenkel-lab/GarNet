@@ -229,14 +229,16 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 	Returns:
 		pd.dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes with the restriction that these motifs and genes must have been found near a peak.
 	"""
-	logger.info("Mapping peaks against genome from garnet-file "+garnet_filepath)
-	logger.info("Unpacking garnet file (this can take a while)... ")
-	genome = parse_garnet_file(garnet_filepath)
 
 	# peaks_filepath_or_list_of_peaks_filepaths is either a filepath or FILE, or a list of filepaths or FILEs.
 	# Let's operate on a list in either case, so if it's a single string, put it in a list. #TODO, this will break if it's a single FILE.
 	if isinstance(peaks_filepath_or_list_of_peaks_filepaths, list): list_of_peaks_filepaths = peaks_filepath_or_list_of_peaks_filepaths
 	else: list_of_peaks_filepaths = [peaks_filepath_or_list_of_peaks_filepaths]
+	assert all([os.path.isfile(peaks_filepath) for peaks_filepath in list_of_peaks_filepaths])
+
+	logger.info("Mapping peaks against genome from garnet-file "+garnet_filepath)
+	logger.info("Unpacking garnet file (this can take a while)... ")
+	genome = parse_garnet_file(garnet_filepath)
 
 	output = []
 
@@ -252,7 +254,7 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 		columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "peakName"]
 		peak_regions = pd.DataFrame.from_records(peak_regions, columns=columns_to_output)
 
-		# peak_regions = peak_regions.apply(type_of_peak, axis=1)
+		peak_regions = peak_regions.apply(type_of_peak, axis=1)
 
 		output.append(peak_regions)
 
