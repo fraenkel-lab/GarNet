@@ -1,6 +1,6 @@
 data/*
 example_data/*
-src/run_new_garnet.py
+example/test_data
 sftp-config.json
 
 
