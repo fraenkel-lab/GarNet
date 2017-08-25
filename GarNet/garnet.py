@@ -293,7 +293,7 @@ def map_peaks_bedtools(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepat
 		motifs = BedTool(garnet_filepath)
 
 		intersected = motifs.intersect(peaks, wa=True, f=1)
-		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "distance2gene"])
+		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "motif_gene_distance"])
 
 		output.append(intersected_df)
 
@@ -387,6 +387,7 @@ def tss_from_bed(bed_file):
 
 	return output_file
 
+
 def construct_garnet_file(reference_file, motifs_file, options): 
 
 	# cleaned reference file in BED format
@@ -398,11 +399,13 @@ def construct_garnet_file(reference_file, motifs_file, options):
 
 	motif_genes = reference_tss.window(motif, w=10000)
 
-	motif_genes_df = motif_genes.to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "tssGene", "tssScore", "tssStrand", 
+	motif_genes_df = motif_genes.to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
 													 "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
 	# calculate distance between motif and gene
-	motif_genes_df["motifClosestEnd"] = 
+	motif_genes_df["motifClosestEnd"] = motif_genes_df.apply(lambda row: row["motifEnd"] if row["motifStrand"] == "+" else row["motifStart"], axis=1)
+	motif_genes_df["motif_gene_distance"] = (motif_genes_df["motifClosestEnd"] - motif_genes_df["tssStart"]) * \
+											motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
 
 	return motif_genes_df
 
