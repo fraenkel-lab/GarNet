@@ -7,6 +7,7 @@ import os
 # Peripheral python modules
 import pickle
 import logging
+import subprocess 
 
 # Core python external libraries
 import numpy as np
@@ -362,36 +363,80 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 	return imputed_TF_features_dataframe
 
 
+
+
+######################################## Contruct Garnet File ########################################
+
+def tss_from_bed(bed_file): 
+
+	output_file = bed_file.replace(".bed", ".tss.bed")
+
+	# taken from https://github.com/arq5x/bedtools-protocols/blob/master/bedtools.md
+	bed_to_tss_cmd = ''' cat %s | awk 'BEGIN{OFS=FS="\t"} \
+	       { if ($6 == "+") \
+	         { print $1,$2,$2+1,$4,$5,$6 } \
+	         else if ($6 == "-") \
+	         { print $1,$3-1,$3,$4,$5,$6 } \
+	       }' \
+	| sort -k1,1 -k2,2n \
+	| uniq \
+	> %s''' %(bed_file, output_file)
+
+	logger.info('  - Wrote TSS file to ' + output_file)
+	subprocess.call(bed_to_tss_cmd, shell=True)
+
+	return output_file
+
+def construct_garnet_file(reference_file, motifs_file, options): 
+
+	# cleaned reference file in BED format
+	reference_tss_file = tss_from_bed(reference_file)
+
+	# window overlap with motifs file. Must be in BED format
+	motif = BedTool(motifs_file)
+	reference_tss = BedTool(reference_tss_file)
+
+	motif_genes = reference_tss.window(motif, w=10000)
+
+	motif_genes_df = motif_genes.to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "tssGene", "tssScore", "tssStrand", 
+													 "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
+
+	# calculate distance between motif and gene
+	motif_genes_df["motifClosestEnd"] = 
+
+	return motif_genes_df
+
+
 ######################################## Private Functions ########################################
 
-def construct_garnet_file(known_genes_file, motifs_file, options):
-	"""
-	Construct a representation of the genome to which to map peaks.
+# def construct_garnet_file(known_genes_file, motifs_file, options):
+# 	"""
+# 	Construct a representation of the genome to which to map peaks.
 
-	This function searches for overlap of motifs and genes, and writes a file of motif / gene pairs.
+# 	This function searches for overlap of motifs and genes, and writes a file of motif / gene pairs.
 
-	Arguments:
-		known_genes_file (str or FILE): filepath or file object for the known genes file
-		motifs_file (str or FILE): filepath or file object for the motifs file
-		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
-		kgXref_file (str or FILE): filepath or file object for the known genes reference file
+# 	Arguments:
+# 		known_genes_file (str or FILE): filepath or file object for the known genes file
+# 		motifs_file (str or FILE): filepath or file object for the motifs file
+# 		options (dict): {"upstream_window": int, "downstream_window": int, "tss": bool, "output_dir": string (optional)})
+# 		kgXref_file (str or FILE): filepath or file object for the known genes reference file
 
-	Returns:
-		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
-	"""
+# 	Returns:
+# 		dataframe: A dataframe listing transcription factor binding motifs and nearby genes.
+# 	"""
 
-	reference = dict_of_IntervalTree_from_known_genes_file(known_genes_file, options)
-	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
+# 	reference = dict_of_IntervalTree_from_known_genes_file(known_genes_file, options)
+# 	motifs = dict_of_IntervalTree_from_motifs_file(motifs_file)
 
-	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
+# 	motifs_with_associated_genes = intersection_of_dict_of_intervaltree(motifs, reference)
 
-	motifs_and_genes = [{**motif, **gene} for motif, gene in motifs_with_associated_genes]
+# 	motifs_and_genes = [{**motif, **gene} for motif, gene in motifs_with_associated_genes]
 
-	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
-	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
-	motifs_and_genes['motif_to_gene_distance'] = motifs_and_genes['motifStart'] - motifs_and_genes['geneStart']
+# 	columns_to_output = ["chrom", "motifStart", "motifEnd", "motifName", "motifScore", "geneName", "geneStart", "geneEnd"]
+# 	motifs_and_genes = pd.DataFrame.from_records(motifs_and_genes, columns=columns_to_output)
+# 	motifs_and_genes['motif_to_gene_distance'] = motifs_and_genes['motifStart'] - motifs_and_genes['geneStart']
 
-	return motifs_and_genes
+# 	return motifs_and_genes
 
 
 def dict_of_IntervalTree_from_peak_file(peaks_file):
