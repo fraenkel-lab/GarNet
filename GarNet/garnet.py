@@ -20,7 +20,7 @@ from intervaltree import IntervalTree
 import jinja2
 
 # list of public methods:
-__all__ = [ "map_peaks", "TF_regression" ]
+__all__ = [ "map_peaks", "map_peaks_bedtools", "TF_regression" ]
 
 
 templateLoader = jinja2.FileSystemLoader(searchpath=".")
