@@ -265,7 +265,7 @@ def tss_from_bed(bed_file):
 	return output_file
 
 
-def construct_garnet_file(reference_file, motifs_file, options): 
+def construct_garnet_file(reference_file, motifs_file, output_file, options): 
 
 	# cleaned reference file in BED format
 	reference_tss_file = tss_from_bed(reference_file)
@@ -288,7 +288,6 @@ def construct_garnet_file(reference_file, motifs_file, options):
 	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
 									 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
-	output_file = "garnetDB.tsv" 
 	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
 	logger.info('  - Garnet gene-motif file written to ' + output_file)
 
