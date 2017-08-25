@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from statsmodels.formula.api import ols as linear_regression
 from statsmodels.graphics.regressionplots import abline_plot as plot_regression
+from pybedtools import BedTool
 
 # Peripheral python external libraries
 from intervaltree import IntervalTree
@@ -257,6 +258,43 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 		peak_regions = peak_regions.apply(type_of_peak, axis=1)
 
 		output.append(peak_regions)
+
+	# conversely, if this function was passed a single file, return a single dataframe
+	if len(output) == 1: output = output[0]
+	return output
+
+
+def map_peaks_bedtools(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
+	"""
+	Find motifs and associated genes local to peaks.
+
+	This function intersects peaks from an epigenomics dataset with TF motifs. 
+
+	Arguments:
+		garnet_filepath (str): filepath to the garnet file.
+		peaks_filepath_or_list_of_peaks_filepaths (str or list): filepath of the peaks file, or list of such paths
+
+	Returns:
+		pd.dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes with the restriction that these motifs and genes must have been found near a peak.
+	"""
+
+	# peaks_filepath_or_list_of_peaks_filepaths is either a filepath or FILE, or a list of filepaths or FILEs.
+	# Let's operate on a list in either case, so if it's a single string, put it in a list. #TODO, this will break if it's a single FILE.
+	if isinstance(peaks_filepath_or_list_of_peaks_filepaths, list): list_of_peaks_filepaths = peaks_filepath_or_list_of_peaks_filepaths
+	else: list_of_peaks_filepaths = [peaks_filepath_or_list_of_peaks_filepaths]
+	assert all([os.path.isfile(peaks_filepath) for peaks_filepath in list_of_peaks_filepaths])
+
+	output = []
+
+	for peaks_filepath in list_of_peaks_filepaths:
+
+		peaks = BedTool(peaks_filepath)
+		motifs = BedTool(garnet_filepath)
+
+		intersected = motifs.intersect(peaks, wa=True, f=1)
+		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "distance2gene"])
+
+		output.append(intersected_df)
 
 	# conversely, if this function was passed a single file, return a single dataframe
 	if len(output) == 1: output = output[0]

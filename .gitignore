@@ -1,5 +1,7 @@
 data/*
 example_data/*
+src/run_new_garnet.py
+sftp-config.json
 
 
 # Byte-compiled / optimized / DLL files
