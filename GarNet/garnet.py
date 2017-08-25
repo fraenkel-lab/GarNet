@@ -407,6 +407,14 @@ def construct_garnet_file(reference_file, motifs_file, options):
 	motif_genes_df["motif_gene_distance"] = (motif_genes_df["motifClosestEnd"] - motif_genes_df["tssStart"]) * \
 											motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
 
+	# reorder columns
+	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
+									 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
+
+	output_file = "garnetDB.tsv" 
+	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
+	logger.info('  - Garnet gene-motif file written to ' + output_file)
+
 	return motif_genes_df
 
 
