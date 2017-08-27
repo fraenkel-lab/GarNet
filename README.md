@@ -30,7 +30,7 @@ pip3 install garnet
 from GarNet import *
 ```
 
-should suffice. GarNet depends on numpy, pandas, statsmodels, and [IntervalTree](https://github.com/chaimleib/intervaltree). (and matplotlib and jinja2 for figures and reports)
+should suffice. GarNet depends on numpy, pandas, statsmodels, and pybedtools. (and matplotlib and jinja2 for figures and reports)
 
 
 ## Documentataion
@@ -48,10 +48,6 @@ GarNet has 2 public methods:
 
 This repository is an updated version of Garnet, originally written by [Sara Gosline](https://github.com/sgosline) and Anthony Soltis as part of [OmicsIntegrator](https://github.com/fraenkel-lab/omicsintegrator).
 
-This repository depends heavily on [pandas](http://pandas.pydata.org/) and [IntervalTree](https://github.com/chaimleib/intervaltree).
+This repository depends heavily on [pandas](http://pandas.pydata.org/) and pybedtools. 
 
 We're very thankful for access to [MotifMap](http://motifmap-rna.ics.uci.edu/) and [RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) for our motif and genome data, upon which our analyses depend.
-
-
-
-

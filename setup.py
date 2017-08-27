@@ -18,7 +18,6 @@ setup(
         'pandas',
         'statsmodels',
         'matplotlib',
-        'intervaltree',
         'jinja2',
         'pybedtools'
     ],
