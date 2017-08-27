@@ -1,5 +1,7 @@
 data/*
 example_data/*
+example/test_data/*
+sftp-config.json
 
 
 # Byte-compiled / optimized / DLL files

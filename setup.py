@@ -10,8 +10,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'],
     license='MIT',
-    author='zfrenchee',
-    author_email='alex@lenail.org',
+    author='zfrenchee, iamjli',
+    author_email='alex@lenail.org, iamjli@mit.edu',
     description='',
     install_requires=[
         'numpy',
@@ -19,7 +19,8 @@ setup(
         'statsmodels',
         'matplotlib',
         'intervaltree',
-        'jinja2'
+        'jinja2',
+        'pybedtools'
     ],
 )
 
