@@ -1,6 +1,6 @@
 data/*
 example_data/*
-example/test_data
+example/test_data/*
 sftp-config.json
 
 

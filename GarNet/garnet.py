@@ -96,6 +96,36 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None, organism="hg19"):
 	return known_genes_dataframe
 
 
+def parse_motifs_file(motifs_file, organism="hg19"):
+	"""
+	Parse the MotifMap BED file listing Transcription Factor Binding Motifs in the genome
+	Arguments:
+		motifs_file (string or FILE): file procured from MotifMap with full list of TF binding sites in the genome
+		organism (str): name of the organism, either "hg19", "mm9", or "mm10"
+	Returns:
+		dataframe: motif dataframe
+	"""
+
+	if organism is "mm9":
+		motif_fieldnames = ["ZScore","BBLS","FDR","stop","FDR","strand","BLS","accession","FDR","cid","medianhits","start","name","orientation","chrom","stdevhits","LOD","NLOD","realhits"]
+
+	elif organism is "mm10":
+		motif_fieldnames = ["stdevhits","ZScore","BLS","name","chrom","FDR_lower","FDR","orientation","start","LOD","cid","strand","realhits","NLOD","BBLS","medianhits","stop","FDR_upper","accession"]
+
+	elif organism is "hg19":
+		motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
+
+	else: logger.critical('organism name entered not recognized in parse_motifs_file'); sys.exit(1)
+
+	motif_dataframe = pd.read_csv(motifs_file, delimiter='\t', names=motif_fieldnames)
+
+	motif_dataframe.rename(index=str, columns={"start":"motifStart", "stop":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
+
+	motif_dataframe[['motifStart','motifEnd']] = motif_dataframe[['motifStart','motifEnd']].apply(pd.to_numeric)
+
+	return motif_dataframe
+
+
 def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe):
 	"""
 	If the argument is a dataframe, return it. Otherwise if the argument is a string, try to read a dataframe from it, and return that
@@ -155,7 +185,8 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 		peaks_filepath_or_list_of_peaks_filepaths (str or list): filepath of the peaks file, or list of such paths
 
 	Returns:
-		pd.dataframe: a dataframe with rows of transcription factor binding motifs and nearby genes with the restriction that these motifs and genes must have been found near a peak.
+		ouput (pd.DataFrame): a dataframe with rows of transcription factor binding motifs and nearby genes with 
+		the restriction that these motifs and genes must have been found near a peak.
 	"""
 
 	# peaks_filepath_or_list_of_peaks_filepaths is either a filepath or FILE, or a list of filepaths or FILEs.
@@ -245,10 +276,27 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 ######################################## Contruct Garnet File ########################################
 
 def tss_from_bed(bed_file): 
+	"""
+	This function writes a BED file defining the transcription start sites (TSS) inferred from the 
+	reference gene file. It also sorts the TSS and removes any duplicate entries. 
+
+	Arguments:
+		bed_file (str): path to the reference gene BED file
+
+	Returns:
+		output_file (str): the path to the output TSS file. 
+	"""
 
 	output_file = bed_file.replace(".bed", ".tss.bed")
 
-	# taken from https://github.com/arq5x/bedtools-protocols/blob/master/bedtools.md
+	""" These series of commands generates a BED file of TSS from the known genes file. 
+	The `awk` command identifies whether the gene is transcribed on the forward or
+	reverse strand. If the gene is on the forward strand, it assumes the TSS is at the 
+	start of the region, and if the gene is on the reverse strand, the TSS is placed at 
+	the end. The resulting TSS file is sorted and uniquified, and written to output_file. 
+
+	Code taken from https://github.com/arq5x/bedtools-protocols/blob/master/bedtools.md
+	To be replaced by pybedtools command, if possible """
 	bed_to_tss_cmd = ''' cat %s | awk 'BEGIN{OFS=FS="\t"} \
 	       { if ($6 == "+") \
 	         { print $1,$2,$2+1,$4,$5,$6 } \
@@ -259,37 +307,56 @@ def tss_from_bed(bed_file):
 	| uniq \
 	> %s''' %(bed_file, output_file)
 
-	logger.info('  - Wrote TSS file to ' + output_file)
 	subprocess.call(bed_to_tss_cmd, shell=True)
+	logger.info('  - Wrote TSS file to ' + output_file)
 
 	return output_file
 
 
 def construct_garnet_file(reference_file, motifs_file, output_file, options): 
+	"""
+	This function constructs the GarNet file by searching for any motifs that are within 
+	a certain window of a reference TSS. It generates a dataframe with these assocations, 
+	as well as the distance between the motif and gene TSS. It also writes the dataframe
+	to the specified output file. 
 
-	# cleaned reference file in BED format
+	Arguments:
+		reference_file (str): path to the reference gene BED file
+		motifs_file (str): path to the motifs BED file
+		output_file (str): ouput GarNet file path
+
+	Returns:
+		motif_genes_df (pd.DataFrame): motif-gene associations and distance between the two. 
+	"""
+
+	# Generate BED file of TSS from reference gene file
 	reference_tss_file = tss_from_bed(reference_file)
 
-	# window overlap with motifs file. Must be in BED format
 	motif = BedTool(motifs_file)
 	reference_tss = BedTool(reference_tss_file)
 
+	# Search for all motifs within a window of 10kb from any gene in the reference TSS file
+	# TODO: window size should be generated via the options parameter.
 	motif_genes = reference_tss.window(motif, w=10000)
 
+	# Generate dataframe from pybedtools object. 
 	motif_genes_df = motif_genes.to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
 													 "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
-	# calculate distance between motif and gene
+	""" Calculate distance between motif and gene by first identifying the side of the motif 
+	that is closest to the gene (this depends on which strand the motif is on), and next
+	finding the distance between the closest end to the gene TSS. A negative value indicates
+	that the motif is upstream of the TSS. """
 	motif_genes_df["motifClosestEnd"] = motif_genes_df.apply(lambda row: row["motifEnd"] if row["motifStrand"] == "+" else row["motifStart"], axis=1)
 	motif_genes_df["motif_gene_distance"] = (motif_genes_df["motifClosestEnd"] - motif_genes_df["tssStart"]) * \
 											motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
 
-	# reorder columns
+	# Filter and reorder columns
 	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
 									 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
 	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
-	logger.info('  - Garnet gene-motif file written to ' + output_file)
+	logger.info('  - %d motif-gene associations found and written to %s' %(motif_genes_df.shape[0], output_file))
 
 	return motif_genes_df
 
