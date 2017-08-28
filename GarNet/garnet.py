@@ -242,8 +242,8 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 	# the same geneName might have different names but since the expression is geneName-wise
 	# these additional names cause bogus regression p-values. Get rid of them here.
-	if 'geneName' in motifs_genes_and_expression_levels.columns:
-		motifs_genes_and_expression_levels.drop_duplicates(subset=['geneName', 'motifName'], inplace=True)
+	# if 'geneName' in motifs_genes_and_expression_levels.columns:
+	# 	motifs_genes_and_expression_levels.drop_duplicates(subset=['geneName', 'motifName'], inplace=True)
 	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
@@ -262,17 +262,17 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
-			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name + '.jpg'))
+			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.pdf'))
 
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], expression_profile['geneName'].tolist()))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
-	if output_dir:
-		html_output = templateEnv.get_template("summary.jinja").render(images_dir=os.path.join(output_dir,"regression_plots",""), TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
-		with open(os.path.join(output_dir,"summary.html"), "w") as summary_output_file:
-			summary_output_file.write(html_output)
+	# if output_dir:
+	# 	html_output = templateEnv.get_template("summary.jinja").render(images_dir=os.path.join(output_dir,"regression_plots",""), TFs=sorted(imputed_TF_features, key=lambda x: x[2]))
+	# 	with open(os.path.join(output_dir,"summary.html"), "w") as summary_output_file:
+	# 		summary_output_file.write(html_output)
 
 	return imputed_TF_features_dataframe
 
