@@ -38,7 +38,8 @@ logger.addHandler(handler)
 
 def parse_expression_file(expression_file):
 	"""
-	Parse gene expression scores from a transcriptomics assay (e.g. RNAseq) into a dataframe
+	Parse gene expression scores from a transcriptomics assay (e.g. RNAseq) into a dataframe and ensures
+	columns are of the correct type. 
 
 	Arguments:
 		expression_file (string or FILE): Two-column, tab-delimited file of gene / gene expression score
@@ -46,8 +47,11 @@ def parse_expression_file(expression_file):
 	Returns:
 		dataframe: expression dataframe
 	"""
+	df = pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
+	df["expression"] = pd.to_numeric(df["expression"], errors="coerce")
+	df.dropna(inplace=True)
 
-	return pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
+	return df
 
 
 def parse_known_genes_file(known_genes_file, kgXref_file=None, organism="hg19"):

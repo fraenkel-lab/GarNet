@@ -1,6 +1,8 @@
 data/*
 example_data/*
 example/test_data/*
+garnet_data
+example/TF_regress_example.ipynb
 sftp-config.json
 
 
