@@ -272,12 +272,13 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
 				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True), 
 				cmap=matplotlib.cm.Blues_r)
+			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifScore']))
 			plt.colorbar()
 
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
 			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.pdf'))
 
-		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], expression_profile['geneName'].tolist()))
+		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], ','.join(expression_profile['geneName'].tolist())))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
 
@@ -358,6 +359,7 @@ def construct_garnet_file(reference_file, motifs_file, output_file, options):
 
 	# Search for all motifs within a window of 10kb from any gene in the reference TSS file
 	# TODO: window size should be generated via the options parameter.
+	logger.info('  - Searching for motifs near genes. This may take a while (~15 min)...')
 	motif_genes = reference_tss.window(motif, w=10000)
 
 	# Generate dataframe from pybedtools object. 
