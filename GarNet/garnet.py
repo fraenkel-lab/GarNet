@@ -306,6 +306,10 @@ def tss_from_bed(bed_file):
 
 	output_file = bed_file.replace(".bed", ".tss.bed")
 
+	if os.path.isfile(output_file): 
+		logger.info('  - TSS file already exists here ' + output_file)
+		return output_file
+
 	""" These series of commands generates a BED file of TSS from the known genes file. 
 	The `awk` command identifies whether the gene is transcribed on the forward or
 	reverse strand. If the gene is on the forward strand, it assumes the TSS is at the 
