@@ -203,7 +203,7 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 		motifs = BedTool(garnet_filepath)
 
 		intersected = motifs.intersect(peaks, wa=True, f=1)
-		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifScore", "geneName", "geneStart", "geneEnd", "motif_gene_distance"])
+		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifScore", "motifStrand", "geneName", "geneStart", "geneEnd", "motif_gene_distance"])
 
 		output.append(intersected_df)
 
