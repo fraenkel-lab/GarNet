@@ -19,6 +19,9 @@ from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 from pybedtools import BedTool
 import jinja2
 
+import matplotlib
+import matplotlib.pyplot as plt
+
 # list of public methods:
 __all__ = [ "map_peaks", "TF_regression" ]
 
@@ -256,11 +259,21 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		# Occasionally there's only one gene associated with a TF, which we can't fit a line to.
 		if len(expression_profile) < 5: continue
 
+		# This allows heavier points to be visualized on the top instead of being hidden by long distance points 
+		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
+
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
 		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+			# Add color to points based on distance to gene
+			plt.scatter(expression_profile["motifScore"], expression_profile["expression"],
+				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
+				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True), 
+				cmap=matplotlib.cm.Blues_r)
+			plt.colorbar()
+
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
 			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.pdf'))
 
