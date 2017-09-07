@@ -260,7 +260,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		if len(expression_profile) < 5: continue
 
 		# This allows heavier points to be visualized on the top instead of being hidden by long distance points 
-		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
+		# expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
 
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
