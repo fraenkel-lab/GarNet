@@ -100,36 +100,6 @@ def parse_known_genes_file(known_genes_file, kgXref_file=None, organism="hg19"):
 	return known_genes_dataframe
 
 
-def parse_motifs_file(motifs_file, organism="hg19"):
-	"""
-	Parse the MotifMap BED file listing Transcription Factor Binding Motifs in the genome
-	Arguments:
-		motifs_file (string or FILE): file procured from MotifMap with full list of TF binding sites in the genome
-		organism (str): name of the organism, either "hg19", "mm9", or "mm10"
-	Returns:
-		dataframe: motif dataframe
-	"""
-
-	if organism is "mm9":
-		motif_fieldnames = ["ZScore","BBLS","FDR","stop","FDR","strand","BLS","accession","FDR","cid","medianhits","start","name","orientation","chrom","stdevhits","LOD","NLOD","realhits"]
-
-	elif organism is "mm10":
-		motif_fieldnames = ["stdevhits","ZScore","BLS","name","chrom","FDR_lower","FDR","orientation","start","LOD","cid","strand","realhits","NLOD","BBLS","medianhits","stop","FDR_upper","accession"]
-
-	elif organism is "hg19":
-		motif_fieldnames = ["ZScore","FDR_lower","name","orientation","chrom","LOD","strand","start","realhits","cid","FDR","NLOD","BBLS","stop","medianhits","accession","FDR_upper","BLS","stdevhits"]
-
-	else: logger.critical('organism name entered not recognized in parse_motifs_file'); sys.exit(1)
-
-	motif_dataframe = pd.read_csv(motifs_file, delimiter='\t', names=motif_fieldnames)
-
-	motif_dataframe.rename(index=str, columns={"start":"motifStart", "stop":"motifEnd", "FDR":"motifScore", "strand":"motifStrand", "name":"motifName"}, inplace=True)
-
-	motif_dataframe[['motifStart','motifEnd']] = motif_dataframe[['motifStart','motifEnd']].apply(pd.to_numeric)
-
-	return motif_dataframe
-
-
 def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe):
 	"""
 	If the argument is a dataframe, return it. Otherwise if the argument is a string, try to read a dataframe from it, and return that
