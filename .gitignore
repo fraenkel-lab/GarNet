@@ -1,5 +1,4 @@
 data/*
-example/test_data/*
 garnet_data/motifMap_hg19
 garnet_data/reference/ucsc_hg19_kgXref.tsv
 garnet_data/reference/ucsc_hg19_knownGenes.tsv
