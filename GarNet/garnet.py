@@ -305,7 +305,7 @@ def tss_from_bed(bed_file):
 	return output_file
 
 
-def construct_garnet_file(reference_file, motifs_file, output_file, options): 
+def construct_garnet_file(reference_file, motif_file_or_files, output_file, options): 
 	"""
 	This function constructs the GarNet file by searching for any motifs that are within 
 	a certain window of a reference TSS. It generates a dataframe with these assocations, 
@@ -321,20 +321,25 @@ def construct_garnet_file(reference_file, motifs_file, output_file, options):
 		motif_genes_df (pd.DataFrame): motif-gene associations and distance between the two. 
 	"""
 
+	# Check whether motif_file_or_files is single path or list of paths
+	if isinstance(motif_file_or_files, list): motif_files = motif_file_or_files
+	else: motif_files = [motif_file_or_files]
+
 	# Generate BED file of TSS from reference gene file
 	reference_tss_file = tss_from_bed(reference_file)
-
-	motif = BedTool(motifs_file)
 	reference_tss = BedTool(reference_tss_file)
 
-	# Search for all motifs within a window of 10kb from any gene in the reference TSS file
+	# Function that searches for all motifs within a window of 10kb from any gene in the  
+	# reference TSS file, and returns a dataframe. 
 	# TODO: window size should be generated via the options parameter.
-	logger.info('  - Searching for motifs near genes. This may take a while (~15 min)...')
-	motif_genes = reference_tss.window(motif, w=10000)
+	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
+														 .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
+																		 	  "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
-	# Generate dataframe from pybedtools object. 
-	motif_genes_df = motif_genes.to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
-													 "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
+	# Perform motif-gene matching for each motif file, the concatenate them together. 
+	logger.info('  - Searching for motifs near genes. This may take a while...')
+	motif_genes_df = pd.concat([get_motif_genes_df(motif_file) for motif_file in motif_files])
+													 
 
 	""" Calculate distance between motif and gene by first identifying the side of the motif 
 	that is closest to the gene (this depends on which strand the motif is on), and next
