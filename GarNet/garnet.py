@@ -57,52 +57,6 @@ def parse_expression_file(expression_file):
 	return df
 
 
-def parse_known_genes_file(known_genes_file, kgXref_file=None, organism="hg19"):
-	"""
-	Parse the RefSeq known genes file into a pandas dataframe
-
-	The known genes file format is the following:
-	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
-
-	Arguments:
-		known_genes_file (string or FILE): file procured from RefSeq with full list of genes in genome
-		kgXref_file (string or FILE): (optional) additional "Cross Reference" file with more details on those genes
-
-	Returns:
-		dataframe: known genes dataframe
-	"""
-
-	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
-
-	known_genes_dataframe = pd.read_csv(known_genes_file, delimiter='\t', names=known_genes_fieldnames)
-
-	known_genes_dataframe.rename(index=str, columns={"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"}, inplace=True)
-
-	known_genes_dataframe[['geneStart','geneEnd']] = known_genes_dataframe[['geneStart','geneEnd']].apply(pd.to_numeric)
-
-	if kgXref_file:
-
-		if organism == "hg19":
-			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
-
-		elif organism == "mm9":
-			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
-
-		elif organism == "mm10":
-			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description","rfamAcc","tRnaName"]
-
-		else: logger.critical('organism name entered not recognized in parse_known_genes_file'); sys.exit(1)
-
-		kgXref_dataframe = pd.read_csv(kgXref_file, delimiter='\t', names=kgXref_fieldnames)
-
-		known_genes_dataframe = known_genes_dataframe.merge(kgXref_dataframe, left_on='geneName', right_on='kgID', how='left')
-		known_genes_dataframe.rename(index=str, columns={"geneName":"ucID", "geneSymbol":"geneName"}, inplace=True)
-
-	else: logger.info('Program was not supplied with a kgXref file, gene names will only be supplied as kgID')
-
-	return known_genes_dataframe
-
-
 def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe):
 	"""
 	If the argument is a dataframe, return it. Otherwise if the argument is a string, try to read a dataframe from it, and return that
@@ -117,36 +71,6 @@ def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe
 	else: logger.critical('argument not recognized as a file or a dataframe, exiting...'); sys.exit(1)
 
 	return motifs_and_genes_dataframe
-
-
-def save_as_pickled_object(obj, directory, filename):
-	"""
-	This is a defensive way to write pickle.write, allowing for very large files on all platforms
-	"""
-	filepath = os.path.join(directory, filename)
-	max_bytes = 2**31 - 1
-	bytes_out = pickle.dumps(obj)
-	n_bytes = sys.getsizeof(bytes_out)
-	with open(filepath, 'wb') as f_out:
-		for idx in range(0, n_bytes, max_bytes):
-			f_out.write(bytes_out[idx:idx+max_bytes])
-
-
-def try_to_load_as_pickled_object_or_None(filepath):
-	"""
-	This is a defensive way to write pickle.load, allowing for very large files on all platforms
-	"""
-	max_bytes = 2**31 - 1
-	try:
-		input_size = os.path.getsize(filepath)
-		bytes_in = bytearray(0)
-		with open(filepath, 'rb') as f_in:
-			for _ in range(0, input_size, max_bytes):
-				bytes_in += f_in.read(max_bytes)
-		obj = pickle.loads(bytes_in)
-	except:
-		return None
-	return obj
 
 
 ######################################### Public Functions #########################################
