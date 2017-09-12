@@ -166,6 +166,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+
 			# Add color to points based on distance to gene
 			plt.scatter(expression_profile["motifScore"], expression_profile["expression"],
 				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
@@ -175,7 +176,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 			plt.colorbar()
 
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
-			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.pdf'))
+			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.png'))
 
 		# TODO: implement FDR calculation
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], ','.join(expression_profile['geneName'].tolist())))
