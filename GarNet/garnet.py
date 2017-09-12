@@ -139,8 +139,9 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 	# the same geneName might have different names but since the expression is geneName-wise
 	# these additional names cause bogus regression p-values. Get rid of them here.
-	# if 'geneName' in motifs_genes_and_expression_levels.columns:
-	# 	motifs_genes_and_expression_levels.drop_duplicates(subset=['geneName', 'motifName'], inplace=True)
+	# TODO: implement function to combine duplicates. 
+	if 'geneName' in motifs_genes_and_expression_levels.columns:
+		motifs_genes_and_expression_levels.drop_duplicates(subset=['geneName', 'motifName'], inplace=True)
 	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
@@ -154,7 +155,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		if len(expression_profile) < 5: continue
 
 		# This allows heavier points to be visualized on the top instead of being hidden by long distance points 
-		# expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
+		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
 
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
