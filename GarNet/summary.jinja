@@ -18,7 +18,7 @@
           </tr>
         </thead>
         <tbody>
-          {% for Transcription_Factor, Slope, PVal in TFs %}
+          {% for Transcription_Factor, Slope, PVal, Targets in TFs %}
           <tr>
             <td>{{ loop.index }}</td>
             <td> <a href="http://www.genecards.org/cgi-bin/carddisp.pl?gene={{Transcription_Factor}}">{{Transcription_Factor}}</a> </td>

@@ -19,6 +19,9 @@ from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 from pybedtools import BedTool
 import jinja2
 
+import matplotlib
+import matplotlib.pyplot as plt
+
 # list of public methods:
 __all__ = [ "map_peaks", "TF_regression" ]
 
@@ -54,52 +57,6 @@ def parse_expression_file(expression_file):
 	return df
 
 
-def parse_known_genes_file(known_genes_file, kgXref_file=None, organism="hg19"):
-	"""
-	Parse the RefSeq known genes file into a pandas dataframe
-
-	The known genes file format is the following:
-	http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/knownGene.sql
-
-	Arguments:
-		known_genes_file (string or FILE): file procured from RefSeq with full list of genes in genome
-		kgXref_file (string or FILE): (optional) additional "Cross Reference" file with more details on those genes
-
-	Returns:
-		dataframe: known genes dataframe
-	"""
-
-	known_genes_fieldnames = ["name","chrom","strand","txStart","txEnd","cdsStart","cdsEnd","exonCount","exonStarts","exonEnds","proteinID","alignID"]
-
-	known_genes_dataframe = pd.read_csv(known_genes_file, delimiter='\t', names=known_genes_fieldnames)
-
-	known_genes_dataframe.rename(index=str, columns={"txStart":"geneStart", "txEnd":"geneEnd", "name":"geneName","strand":"geneStrand"}, inplace=True)
-
-	known_genes_dataframe[['geneStart','geneEnd']] = known_genes_dataframe[['geneStart','geneEnd']].apply(pd.to_numeric)
-
-	if kgXref_file:
-
-		if organism == "hg19":
-			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
-
-		elif organism == "mm9":
-			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description"]
-
-		elif organism == "mm10":
-			kgXref_fieldnames = ["kgID","mRNA","spID","spDisplayID","geneSymbol","refseq","protAcc","description","rfamAcc","tRnaName"]
-
-		else: logger.critical('organism name entered not recognized in parse_known_genes_file'); sys.exit(1)
-
-		kgXref_dataframe = pd.read_csv(kgXref_file, delimiter='\t', names=kgXref_fieldnames)
-
-		known_genes_dataframe = known_genes_dataframe.merge(kgXref_dataframe, left_on='geneName', right_on='kgID', how='left')
-		known_genes_dataframe.rename(index=str, columns={"geneName":"ucID", "geneSymbol":"geneName"}, inplace=True)
-
-	else: logger.info('Program was not supplied with a kgXref file, gene names will only be supplied as kgID')
-
-	return known_genes_dataframe
-
-
 def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe):
 	"""
 	If the argument is a dataframe, return it. Otherwise if the argument is a string, try to read a dataframe from it, and return that
@@ -114,36 +71,6 @@ def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe
 	else: logger.critical('argument not recognized as a file or a dataframe, exiting...'); sys.exit(1)
 
 	return motifs_and_genes_dataframe
-
-
-def save_as_pickled_object(obj, directory, filename):
-	"""
-	This is a defensive way to write pickle.write, allowing for very large files on all platforms
-	"""
-	filepath = os.path.join(directory, filename)
-	max_bytes = 2**31 - 1
-	bytes_out = pickle.dumps(obj)
-	n_bytes = sys.getsizeof(bytes_out)
-	with open(filepath, 'wb') as f_out:
-		for idx in range(0, n_bytes, max_bytes):
-			f_out.write(bytes_out[idx:idx+max_bytes])
-
-
-def try_to_load_as_pickled_object_or_None(filepath):
-	"""
-	This is a defensive way to write pickle.load, allowing for very large files on all platforms
-	"""
-	max_bytes = 2**31 - 1
-	try:
-		input_size = os.path.getsize(filepath)
-		bytes_in = bytearray(0)
-		with open(filepath, 'rb') as f_in:
-			for _ in range(0, input_size, max_bytes):
-				bytes_in += f_in.read(max_bytes)
-		obj = pickle.loads(bytes_in)
-	except:
-		return None
-	return obj
 
 
 ######################################### Public Functions #########################################
@@ -211,9 +138,14 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
 
 	# the same geneName might have different names but since the expression is geneName-wise
-	# these additional names cause bogus regression p-values. Get rid of them here.
+	# keep the closest motif to gene in the case of duplicates
+	# TODO: implement function to combine duplicates. 
 	if 'geneName' in motifs_genes_and_expression_levels.columns:
-		motifs_genes_and_expression_levels.drop_duplicates(subset=['geneName', 'motifName'], inplace=True)
+		motifs_genes_and_expression_levels["abs_distance"] = motifs_genes_and_expression_levels.motif_gene_distance.abs()
+		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifScore", ascending=True) \
+																			   .drop("abs_distance", axis=1) \
+																			   .drop_duplicates(subset=['geneName', 'motifName'], keep="first")
+
 	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
@@ -226,17 +158,30 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		# Occasionally there's only one gene associated with a TF, which we can't fit a line to.
 		if len(expression_profile) < 5: continue
 
+		# This allows heavier points to be visualized on the top instead of being hidden by long distance points 
+		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
+
 		# Ordinary Least Squares linear regression
 		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
 
 		if output_dir:
 			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+
+			# Add color to points based on distance to gene
+			plt.scatter(expression_profile["motifScore"], expression_profile["expression"],
+				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
+				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True), 
+				cmap=matplotlib.cm.Blues_r)
+			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifScore']))
+			plt.colorbar()
+
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
-			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name + '.jpg'))
+			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.png'))
 
-		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], expression_profile['geneName'].tolist()))
+		# TODO: implement FDR calculation
+		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], ','.join(expression_profile['geneName'].tolist())))
 
-	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
+	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"]).sort_values("P-Value")
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
 	if output_dir:
@@ -263,6 +208,10 @@ def tss_from_bed(bed_file):
 
 	output_file = bed_file.replace(".bed", ".tss.bed")
 
+	if os.path.isfile(output_file): 
+		logger.info('  - TSS file already exists here ' + output_file)
+		return output_file
+
 	""" These series of commands generates a BED file of TSS from the known genes file. 
 	The `awk` command identifies whether the gene is transcribed on the forward or
 	reverse strand. If the gene is on the forward strand, it assumes the TSS is at the 
@@ -287,7 +236,7 @@ def tss_from_bed(bed_file):
 	return output_file
 
 
-def construct_garnet_file(reference_file, motifs_file, output_file, options): 
+def construct_garnet_file(reference_file, motif_file_or_files, output_file, options): 
 	"""
 	This function constructs the GarNet file by searching for any motifs that are within 
 	a certain window of a reference TSS. It generates a dataframe with these assocations, 
@@ -303,19 +252,26 @@ def construct_garnet_file(reference_file, motifs_file, output_file, options):
 		motif_genes_df (pd.DataFrame): motif-gene associations and distance between the two. 
 	"""
 
+	# Check whether motif_file_or_files is single path or list of paths
+	if isinstance(motif_file_or_files, list): motif_files = motif_file_or_files
+	else: motif_files = [motif_file_or_files]
+	assert all([os.path.isfile(motif_file) for motif_file in motif_files])
+
 	# Generate BED file of TSS from reference gene file
 	reference_tss_file = tss_from_bed(reference_file)
-
-	motif = BedTool(motifs_file)
 	reference_tss = BedTool(reference_tss_file)
 
-	# Search for all motifs within a window of 10kb from any gene in the reference TSS file
+	# Function that searches for all motifs within a window of 10kb from any gene in the  
+	# reference TSS file, and returns a dataframe. 
 	# TODO: window size should be generated via the options parameter.
-	motif_genes = reference_tss.window(motif, w=10000)
+	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
+														 .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
+																		 	  "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
-	# Generate dataframe from pybedtools object. 
-	motif_genes_df = motif_genes.to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
-													 "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
+	# Perform motif-gene matching for each motif file, the concatenate them together. 
+	logger.info('  - Searching for motifs near genes. This may take a while...')
+	motif_genes_df = pd.concat([get_motif_genes_df(motif_file) for motif_file in motif_files])
+													 
 
 	""" Calculate distance between motif and gene by first identifying the side of the motif 
 	that is closest to the gene (this depends on which strand the motif is on), and next
