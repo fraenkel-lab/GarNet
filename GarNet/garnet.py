@@ -172,6 +172,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
 			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.pdf'))
 
+		# TODO: implement FDR calculation
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], ','.join(expression_profile['geneName'].tolist())))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
@@ -248,6 +249,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	# Check whether motif_file_or_files is single path or list of paths
 	if isinstance(motif_file_or_files, list): motif_files = motif_file_or_files
 	else: motif_files = [motif_file_or_files]
+	assert all([os.path.isfile(motif_file) for motif_file in motif_files])
 
 	# Generate BED file of TSS from reference gene file
 	reference_tss_file = tss_from_bed(reference_file)
