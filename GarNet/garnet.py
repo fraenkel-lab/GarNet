@@ -143,8 +143,8 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 	if 'geneName' in motifs_genes_and_expression_levels.columns:
 		motifs_genes_and_expression_levels["abs_distance"] = motifs_genes_and_expression_levels.motif_gene_distance.abs()
 		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifScore", ascending=True) \
-																			   .drop("abs_distance", axis=1) \
-																			   .drop_duplicates(subset=['geneName', 'motifName'], keep="first")
+		                                                                       .drop("abs_distance", axis=1) \
+		                                                                       .drop_duplicates(subset=['geneName', 'motifName'], keep="first")
 
 	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
 
@@ -265,8 +265,8 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	# reference TSS file, and returns a dataframe. 
 	# TODO: window size should be generated via the options parameter.
 	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
-														 .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
-																		 	  "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
+	                                                     .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
+	                                                                          "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
 	# Perform motif-gene matching for each motif file, the concatenate them together. 
 	logger.info('  - Searching for motifs near genes. This may take a while...')
@@ -279,11 +279,11 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	that the motif is upstream of the TSS. """
 	motif_genes_df["motifClosestEnd"] = motif_genes_df.apply(lambda row: row["motifEnd"] if row["motifStrand"] == "+" else row["motifStart"], axis=1)
 	motif_genes_df["motif_gene_distance"] = (motif_genes_df["motifClosestEnd"] - motif_genes_df["tssStart"]) * \
-											motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
+	                                         motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
 
 	# Filter and reorder columns
 	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
-									 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
+	                                 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
 	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
 	logger.info('  - %d motif-gene associations found and written to %s' %(motif_genes_df.shape[0], output_file))
