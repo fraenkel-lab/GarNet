@@ -7,20 +7,18 @@ import os
 # Peripheral python modules
 import pickle
 import logging
-import subprocess 
+import subprocess
 
 # Core python external libraries
 import numpy as np
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols as linear_regression
-from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 
 # Peripheral python external libraries
 from pybedtools import BedTool
 import jinja2
-
-import matplotlib
-import matplotlib.pyplot as plt
 
 # list of public methods:
 __all__ = [ "map_peaks", "TF_regression" ]
@@ -42,7 +40,7 @@ logger.addHandler(handler)
 def parse_expression_file(expression_file):
 	"""
 	Parse gene expression scores from a transcriptomics assay (e.g. RNAseq) into a dataframe and ensures
-	columns are of the correct type. 
+	columns are of the correct type.
 
 	Arguments:
 		expression_file (string or FILE): Two-column, tab-delimited file of gene / gene expression score
@@ -79,14 +77,14 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 	"""
 	Find motifs and associated genes local to peaks.
 
-	This function intersects peaks from an epigenomics dataset with TF motifs. 
+	This function intersects peaks from an epigenomics dataset with TF motifs.
 
 	Arguments:
 		garnet_filepath (str): filepath to the garnet file.
 		peaks_filepath_or_list_of_peaks_filepaths (str or list): filepath of the peaks file, or list of such paths
 
 	Returns:
-		ouput (pd.DataFrame): a dataframe with rows of transcription factor binding motifs and nearby genes with 
+		ouput (pd.DataFrame): a dataframe with rows of transcription factor binding motifs and nearby genes with
 		the restriction that these motifs and genes must have been found near a peak.
 	"""
 
@@ -108,7 +106,7 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 
 		output.append(intersected_df)
 
-	# conversely, if this function was passed a single file, return a single dataframe
+	# If this function was passed a single file, return a single dataframe
 	if len(output) == 1: output = output[0]
 	return output
 
@@ -139,7 +137,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 	# the same geneName might have different names but since the expression is geneName-wise
 	# keep the closest motif to gene in the case of duplicates
-	# TODO: implement function to combine duplicates. 
+	# TODO: implement function to combine duplicates.
 	if 'geneName' in motifs_genes_and_expression_levels.columns:
 		motifs_genes_and_expression_levels["abs_distance"] = motifs_genes_and_expression_levels.motif_gene_distance.abs()
 		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifScore", ascending=True) \
@@ -158,7 +156,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 		# Occasionally there's only one gene associated with a TF, which we can't fit a line to.
 		if len(expression_profile) < 5: continue
 
-		# This allows heavier points to be visualized on the top instead of being hidden by long distance points 
+		# This allows heavier points to be visualized on the top instead of being hidden by long distance points
 		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
 
 		# Ordinary Least Squares linear regression
@@ -170,7 +168,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 			# Add color to points based on distance to gene
 			plt.scatter(expression_profile["motifScore"], expression_profile["expression"],
 				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
-				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True), 
+				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True),
 				cmap=matplotlib.cm.Blues_r)
 			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifScore']))
 			plt.colorbar()
@@ -194,32 +192,32 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 ######################################## Contruct Garnet File ########################################
 
-def tss_from_bed(bed_file): 
+def tss_from_bed(bed_file):
 	"""
-	This function writes a BED file defining the transcription start sites (TSS) inferred from the 
-	reference gene file. It also sorts the TSS and removes any duplicate entries. 
+	This function writes a BED file defining the transcription start sites (TSS) inferred from the
+	reference gene file. It also sorts the TSS and removes any duplicate entries.
 
 	Arguments:
 		bed_file (str): path to the reference gene BED file
 
 	Returns:
-		output_file (str): the path to the output TSS file. 
+		output_file (str): the path to the output TSS file.
 	"""
 
 	output_file = bed_file.replace(".bed", ".tss.bed")
 
-	if os.path.isfile(output_file): 
+	if os.path.isfile(output_file):
 		logger.info('  - TSS file already exists here ' + output_file)
 		return output_file
 
-	""" These series of commands generates a BED file of TSS from the known genes file. 
-	The `awk` command identifies whether the gene is transcribed on the forward or
-	reverse strand. If the gene is on the forward strand, it assumes the TSS is at the 
-	start of the region, and if the gene is on the reverse strand, the TSS is placed at 
-	the end. The resulting TSS file is sorted and uniquified, and written to output_file. 
+	# These series of commands generates a BED file of TSS from the known genes file.
+	# The `awk` command identifies whether the gene is transcribed on the forward or
+	# reverse strand. If the gene is on the forward strand, it assumes the TSS is at the
+	# start of the region, and if the gene is on the reverse strand, the TSS is placed at
+	# the end. The resulting TSS file is sorted and uniquified, and written to output_file.
 
-	Code taken from https://github.com/arq5x/bedtools-protocols/blob/master/bedtools.md
-	To be replaced by pybedtools command, if possible """
+	# Code taken from https://github.com/arq5x/bedtools-protocols/blob/master/bedtools.md
+	# TODO: To be replaced by pybedtools command, if possible
 	bed_to_tss_cmd = ''' cat %s | awk 'BEGIN{OFS=FS="\t"} \
 	       { if ($6 == "+") \
 	         { print $1,$2,$2+1,$4,$5,$6 } \
@@ -236,12 +234,12 @@ def tss_from_bed(bed_file):
 	return output_file
 
 
-def construct_garnet_file(reference_file, motif_file_or_files, output_file, options): 
+def construct_garnet_file(reference_file, motif_file_or_files, output_file, options):
 	"""
-	This function constructs the GarNet file by searching for any motifs that are within 
-	a certain window of a reference TSS. It generates a dataframe with these assocations, 
+	This function constructs the GarNet file by searching for any motifs that are within
+	a certain window of a reference TSS. It generates a dataframe with these assocations,
 	as well as the distance between the motif and gene TSS. It also writes the dataframe
-	to the specified output file. 
+	to the specified output file.
 
 	Arguments:
 		reference_file (str): path to the reference gene BED file
@@ -249,7 +247,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 		output_file (str): ouput GarNet file path
 
 	Returns:
-		motif_genes_df (pd.DataFrame): motif-gene associations and distance between the two. 
+		motif_genes_df (pd.DataFrame): motif-gene associations and distance between the two.
 	"""
 
 	# Check whether motif_file_or_files is single path or list of paths
@@ -261,22 +259,22 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	reference_tss_file = tss_from_bed(reference_file)
 	reference_tss = BedTool(reference_tss_file)
 
-	# Function that searches for all motifs within a window of 10kb from any gene in the  
-	# reference TSS file, and returns a dataframe. 
+	# Function that searches for all motifs within a window of 10kb from any gene in the
+	# reference TSS file, and returns a dataframe.
 	# TODO: window size should be generated via the options parameter.
 	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
-	                                                     .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand", 
+	                                                     .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand",
 	                                                                          "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
-	# Perform motif-gene matching for each motif file, the concatenate them together. 
+	# Perform motif-gene matching for each motif file, the concatenate them together.
 	logger.info('  - Searching for motifs near genes. This may take a while...')
 	motif_genes_df = pd.concat([get_motif_genes_df(motif_file) for motif_file in motif_files])
-													 
 
-	""" Calculate distance between motif and gene by first identifying the side of the motif 
-	that is closest to the gene (this depends on which strand the motif is on), and next
-	finding the distance between the closest end to the gene TSS. A negative value indicates
-	that the motif is upstream of the TSS. """
+
+	# Calculate distance between motif and gene by first identifying the side of the motif
+	# that is closest to the gene (this depends on which strand the motif is on), and next
+	# finding the distance between the closest end to the gene TSS. A negative value indicates
+	# that the motif is upstream of the TSS.
 	motif_genes_df["motifClosestEnd"] = motif_genes_df.apply(lambda row: row["motifEnd"] if row["motifStrand"] == "+" else row["motifStart"], axis=1)
 	motif_genes_df["motif_gene_distance"] = (motif_genes_df["motifClosestEnd"] - motif_genes_df["tssStart"]) * \
 	                                         motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
