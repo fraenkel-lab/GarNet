@@ -80,8 +80,8 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 	This function intersects peaks from an epigenomics dataset with TF motifs.
 
 	Arguments:
-		garnet_filepath (str): filepath to the garnet file.
 		peaks_filepath_or_list_of_peaks_filepaths (str or list): filepath of the peaks file, or list of such paths
+		garnet_filepath (str): filepath to the garnet file.
 
 	Returns:
 		pd.DataFrame: a dataframe with rows of transcription factor binding motifs and nearby genes with
@@ -194,8 +194,8 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 def tss_from_bed(bed_file):
 	"""
-	This function writes a BED file defining the transcription start sites (TSS) inferred from the
-	reference gene file. It also sorts the TSS and removes any duplicate entries.
+	Write a BED file defining the transcription start sites (TSS) inferred from the
+	reference gene file. Sort the TSS and remove any duplicate entries.
 
 	Arguments:
 		bed_file (str): path to the reference gene BED file
@@ -284,7 +284,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
 	                                 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
-	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
+	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=True)
 	logger.info('  - %d motif-gene associations found and written to %s' %(motif_genes_df.shape[0], output_file))
 
 	return motif_genes_df
