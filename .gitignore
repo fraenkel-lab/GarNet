@@ -7,6 +7,9 @@ garnet_data/reference/ucsc_reference.hg19.tss.bed
 garnet_data/cisBP_hg19_SLIM/garnetDB_cisBP.hg19.LOD.10kb.chr1_SLIM.tsv
 example/regression_plots
 
+example_data/*
+data/*
+
 # Config
 sftp-config.json
 
