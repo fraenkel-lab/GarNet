@@ -46,7 +46,7 @@ def parse_expression_file(expression_file):
 		expression_file (string or FILE): Two-column, tab-delimited file of gene / gene expression score
 
 	Returns:
-		dataframe: expression dataframe
+		pd.dataframe: expression dataframe
 	"""
 	df = pd.read_csv(expression_file, delimiter='\t', names=["name", "expression"])
 	df["expression"] = pd.to_numeric(df["expression"], errors="coerce")
@@ -84,7 +84,7 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 		peaks_filepath_or_list_of_peaks_filepaths (str or list): filepath of the peaks file, or list of such paths
 
 	Returns:
-		ouput (pd.DataFrame): a dataframe with rows of transcription factor binding motifs and nearby genes with
+		pd.DataFrame: a dataframe with rows of transcription factor binding motifs and nearby genes with
 		the restriction that these motifs and genes must have been found near a peak.
 	"""
 
@@ -201,7 +201,7 @@ def tss_from_bed(bed_file):
 		bed_file (str): path to the reference gene BED file
 
 	Returns:
-		output_file (str): the path to the output TSS file.
+		str: the path to the output TSS file.
 	"""
 
 	output_file = bed_file.replace(".bed", ".tss.bed")
@@ -234,20 +234,21 @@ def tss_from_bed(bed_file):
 	return output_file
 
 
-def construct_garnet_file(reference_file, motif_file_or_files, output_file, options):
+def construct_garnet_file(reference_file, motif_file_or_files, output_file, options=dict()):
 	"""
-	This function constructs the GarNet file by searching for any motifs that are within
-	a certain window of a reference TSS. It generates a dataframe with these assocations,
-	as well as the distance between the motif and gene TSS. It also writes the dataframe
+	Construct the GarNet file by searching for any motifs that are within
+	a certain window of a reference TSS. Generate a dataframe with these assocations,
+	as well as the distance between the motif and gene TSS. Write the dataframe
 	to the specified output file.
 
 	Arguments:
 		reference_file (str): path to the reference gene BED file
 		motifs_file (str): path to the motifs BED file
 		output_file (str): ouput GarNet file path
+		options (dict): currently not used
 
 	Returns:
-		motif_genes_df (pd.DataFrame): motif-gene associations and distance between the two.
+		pd.DataFrame: motif-gene associations and distance between the two.
 	"""
 
 	# Check whether motif_file_or_files is single path or list of paths
