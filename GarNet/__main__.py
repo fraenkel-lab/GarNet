@@ -8,7 +8,7 @@ import os
 import argparse
 
 # import this module
-from GarNet import map_peaks, TF_regression
+from GarNet import construct_garnet_file, map_peaks, TF_regression
 
 
 parser = argparse.ArgumentParser(prog="GarNet", description="""

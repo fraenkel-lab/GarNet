@@ -15,16 +15,16 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols as linear_regression
+from statsmodels.graphics.regressionplots import abline_plot as plot_regression
 
 # Peripheral python external libraries
 from pybedtools import BedTool
 import jinja2
 
 # list of public methods:
-__all__ = [ "map_peaks", "TF_regression" ]
+__all__ = [ "construct_garnet_file", "map_peaks", "TF_regression" ]
 
-
-templateLoader = jinja2.FileSystemLoader(searchpath=".")
+templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
 templateEnv = jinja2.Environment(loader=templateLoader)
 
 logger = logging.getLogger(__name__)
@@ -175,6 +175,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_di
 
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
 			plot.savefig(os.path.join(output_dir, "regression_plots", TF_name.replace("/", "-") + '.png'))
+			plt.close()
 
 		# TODO: implement FDR calculation
 		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], ','.join(expression_profile['geneName'].tolist())))
@@ -207,7 +208,7 @@ def tss_from_bed(bed_file):
 	output_file = bed_file.replace(".bed", ".tss.bed")
 
 	if os.path.isfile(output_file):
-		logger.info('  - TSS file already exists here ' + output_file)
+		logger.info('  - TSS file seems to already exists at ' + output_file)
 		return output_file
 
 	# These series of commands generates a BED file of TSS from the known genes file.
