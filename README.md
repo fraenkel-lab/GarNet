@@ -21,33 +21,35 @@ If a Transcription Factor binding motif is found near genes changing in expressi
 
 ## Setup
 
+GarNet now uses BedTools for genomic intersection calculations. BedTools installation instructioncs available [here](http://bedtools.readthedocs.io/en/latest/content/installation.html). For mac users, we recommend:
+```
+brew tap homebrew/science
+brew install bedtools
+```
+
 GarNet is a python3 package [available via pypi](https://pypi.python.org/pypi/GarNet). So a simple
 
 ```
 pip3 install garnet
 ```
-```
-from GarNet import *
-```
 
-should suffice. GarNet depends on numpy, pandas, statsmodels, and pybedtools. (and matplotlib and jinja2 for figures and reports)
-
+should suffice. GarNet depends on python packages `numpy`, `pandas`, `statsmodels`, and `pybedtools`. (and `matplotlib` and `jinja2` for figures and reports)
 
 ## Documentataion
 
-GarNet has 2 public methods:
+GarNet has 3 public methods:
 
-- **`map_peaks`** which finds local groups of TF binding motifs, genes, and peaks.
-- **`TF_regression`** which, given a set of motif-gene-peak complexes (e.g. from the previous function) and a gene expression profiles (e.g. from RNA-Seq), will perform regression to predict the significance of each transcription factor to the expression profile.
+- **`construct_garnet_file`** which builds a reference file of important genomic annotations to be mapped against.
+- **`map_peaks`** which maps a file of peaks against a "GarNet file".
+- **`TF_regression`** which, given a set of mapped peaks (e.g. from the previous function) and a gene expression profiles (e.g. from RNA-Seq), will regress each transcription factor's binding scores against its downstream gene expression profile.
 
-
-[Specific documentation about each of the functions can be found here.](https://fraenkel-lab.github.io/GarNet/html/index.html)
+[Specific documentation about each of the functions can be found here.](https://fraenkel-lab.github.io/GarNet/html/index.html)An example workflow using GarNet can be found in the `example` folder .
 
 
 ## Acknowledgements
 
 This repository is an updated version of Garnet, originally written by [Sara Gosline](https://github.com/sgosline) and Anthony Soltis as part of [OmicsIntegrator](https://github.com/fraenkel-lab/omicsintegrator).
 
-This repository depends heavily on [pandas](http://pandas.pydata.org/) and pybedtools. 
+This repository depends heavily on [pandas](http://pandas.pydata.org/) and pybedtools.
 
 We're very thankful for access to [MotifMap](http://motifmap-rna.ics.uci.edu/) and [RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) for our motif and genome data, upon which our analyses depend.
