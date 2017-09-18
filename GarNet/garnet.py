@@ -285,7 +285,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
 	                                 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
-	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=True)
+	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
 	logger.info('  - %d motif-gene associations found and written to %s' %(motif_genes_df.shape[0], output_file))
 
 	return motif_genes_df
