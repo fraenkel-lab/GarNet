@@ -145,14 +145,14 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
 
 	# Add distance-corrected score
-	motifs_genes_and_expression_levels["score_distance_corrected"] = motifs_genes_and_expression_levels.apply(distance_exp_decay, axis=1)
+	motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels.apply(distance_exp_decay, axis=1)
 
-	# the same geneName might have different names but since the expression is geneName-wise
+	# Deal with duplicate gene-motif pairs
 	# keep the closest motif to gene in the case of duplicates
 	# TODO: implement function to combine duplicates.
 	if 'geneName' in motifs_genes_and_expression_levels.columns:
 		motifs_genes_and_expression_levels["abs_distance"] = motifs_genes_and_expression_levels.motif_gene_distance.abs()
-		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifLODScore", ascending=True) \
+		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifTFAScore", ascending=True) \
 		                                                                       .drop("abs_distance", axis=1) \
 		                                                                       .drop_duplicates(subset=['geneName', 'motifName'], keep="first")
 
@@ -172,17 +172,17 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
 
 		# Ordinary Least Squares linear regression
-		result = linear_regression(formula="expression ~ motifLODScore", data=expression_profile).fit()
+		result = linear_regression(formula="expression ~ motifTFAScore", data=expression_profile).fit()
 
 		if output_dir:
-			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifLODScore", y="expression", kind="scatter", grid=True))
+			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifTFAScore", y="expression", kind="scatter", grid=True))
 
 			# Add color to points based on distance to gene
-			plt.scatter(expression_profile["motifLODScore"], expression_profile["expression"],
+			plt.scatter(expression_profile["motifTFAScore"], expression_profile["expression"],
 				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
 				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True),
 				cmap=matplotlib.cm.Blues_r)
-			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifLODScore']))
+			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifTFAScore']))
 			plt.colorbar()
 
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
@@ -190,7 +190,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 			plt.close()
 
 		# TODO: implement FDR calculation
-		imputed_TF_features.append((TF_name, result.params['motifLODScore'], result.pvalues['motifLODScore'], ','.join(expression_profile['geneName'].tolist())))
+		imputed_TF_features.append((TF_name, result.params['motifTFAScore'], result.pvalues['motifTFAScore'], ','.join(expression_profile['geneName'].tolist())))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"]).sort_values("P-Value")
 
