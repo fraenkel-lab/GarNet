@@ -111,7 +111,7 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 	return output
 
 
-def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, output_dir=None):
+def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model="LOD", output_dir=None):
 	"""
 	Do linear regression of the expression of genes versus the strength of the assiciated transcription factor binding motifs and report results.
 
