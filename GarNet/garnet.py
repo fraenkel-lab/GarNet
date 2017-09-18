@@ -102,7 +102,7 @@ def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
 		motifs = BedTool(garnet_filepath)
 
 		intersected = motifs.intersect(peaks, wa=True, f=1)
-		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifScore", "motifStrand", "geneName", "geneStart", "geneEnd", "motif_gene_distance"])
+		intersected_df = intersected.to_dataframe(names=["chrom", "start", "end", "motifName", "motifLODScore", "motifStrand", "geneName", "geneStart", "geneEnd", "motif_gene_distance"])
 
 		output.append(intersected_df)
 
@@ -140,11 +140,11 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 	# TODO: implement function to combine duplicates.
 	if 'geneName' in motifs_genes_and_expression_levels.columns:
 		motifs_genes_and_expression_levels["abs_distance"] = motifs_genes_and_expression_levels.motif_gene_distance.abs()
-		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifScore", ascending=True) \
+		motifs_genes_and_expression_levels = motifs_genes_and_expression_levels.sort_values("motifLODScore", ascending=True) \
 		                                                                       .drop("abs_distance", axis=1) \
 		                                                                       .drop_duplicates(subset=['geneName', 'motifName'], keep="first")
 
-	motifs_genes_and_expression_levels['motifScore'] = motifs_genes_and_expression_levels['motifScore'].astype(float)
+	motifs_genes_and_expression_levels['motifLODScore'] = motifs_genes_and_expression_levels['motifLODScore'].astype(float)
 
 	TFs_and_associated_expression_profiles = list(motifs_genes_and_expression_levels.groupby('motifName'))
 	imputed_TF_features = []
@@ -160,17 +160,17 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 		expression_profile = expression_profile.reindex(expression_profile.motif_gene_distance.abs().sort_values(inplace=False, ascending=False).index)
 
 		# Ordinary Least Squares linear regression
-		result = linear_regression(formula="expression ~ motifScore", data=expression_profile).fit()
+		result = linear_regression(formula="expression ~ motifLODScore", data=expression_profile).fit()
 
 		if output_dir:
-			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifScore", y="expression", kind="scatter", grid=True))
+			plot = plot_regression(model_results=result, ax=expression_profile.plot(x="motifLODScore", y="expression", kind="scatter", grid=True))
 
 			# Add color to points based on distance to gene
-			plt.scatter(expression_profile["motifScore"], expression_profile["expression"],
+			plt.scatter(expression_profile["motifLODScore"], expression_profile["expression"],
 				c=[abs(v) for v in expression_profile["motif_gene_distance"].tolist()],
 				norm=matplotlib.colors.LogNorm(vmin=1, vmax=100000, clip=True),
 				cmap=matplotlib.cm.Blues_r)
-			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifScore']))
+			plt.title("%s, %0.4f" %(TF_name, result.pvalues['motifLODScore']))
 			plt.colorbar()
 
 			os.makedirs(os.path.join(output_dir, "regression_plots"), exist_ok=True)
@@ -178,7 +178,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 			plt.close()
 
 		# TODO: implement FDR calculation
-		imputed_TF_features.append((TF_name, result.params['motifScore'], result.pvalues['motifScore'], ','.join(expression_profile['geneName'].tolist())))
+		imputed_TF_features.append((TF_name, result.params['motifLODScore'], result.pvalues['motifLODScore'], ','.join(expression_profile['geneName'].tolist())))
 
 	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"]).sort_values("P-Value")
 
@@ -266,7 +266,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	# TODO: window size should be generated via the options parameter.
 	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
 	                                                     .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand",
-	                                                                          "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
+	                                                                          "motifChrom", "motifStart", "motifEnd", "motifName", "motifLODScore", "motifStrand"])
 
 	# Perform motif-gene matching for each motif file, the concatenate them together.
 	logger.info('  - Searching for motifs near genes. This may take a while...')
@@ -282,7 +282,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	                                         motif_genes_df.apply(lambda row: 1 if row["tssStrand"] == "+" else -1, axis=1)
 
 	# Filter and reorder columns
-	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand",
+	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifLODScore", "motifStrand",
 	                                 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
 	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=True)
