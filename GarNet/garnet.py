@@ -71,6 +71,15 @@ def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe
 	return motifs_and_genes_dataframe
 
 
+######################################## Scoring Functions #######################################
+
+def distance_exp_decay(row, decay_distance=10000): 
+	"""
+	Weight motif LOD scores by distance to TSS. Closer genes are exponentially higher weighted. 
+	"""
+	return row["motifLODScore"] * np.exp(-abs(float(row["motif_gene_distance"])) / decay_distance)
+
+
 ######################################### Public Functions #########################################
 
 def map_peaks(peaks_filepath_or_list_of_peaks_filepaths, garnet_filepath):
@@ -134,6 +143,9 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 	expression_dataframe = parse_expression_file(expression_file)
 
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
+
+	# Add distance-corrected score
+	motifs_genes_and_expression_levels["score_distance_corrected"] = motifs_genes_and_expression_levels.apply(distance_exp_decay, axis=1)
 
 	# the same geneName might have different names but since the expression is geneName-wise
 	# keep the closest motif to gene in the case of duplicates
@@ -285,7 +297,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	motif_genes_df = motif_genes_df[["motifChrom", "motifStart", "motifEnd", "motifName", "motifLODScore", "motifStrand",
 	                                 "geneName", "tssStart", "tssEnd", "motif_gene_distance"]]
 
-	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=True)
+	motif_genes_df.to_csv(output_file, sep='\t', index=False, header=False)
 	logger.info('  - %d motif-gene associations found and written to %s' %(motif_genes_df.shape[0], output_file))
 
 	return motif_genes_df
