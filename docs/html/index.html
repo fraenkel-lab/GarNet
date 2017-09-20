@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Welcome to GarNet’s technical documentation! &mdash; GarNet 2.0 documentation</title>
+  <title>GarNet 0.5.0 &mdash; GarNet 2.0 documentation</title>
   
 
   
@@ -90,7 +90,7 @@
             
               <!-- Local TOC -->
               <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Welcome to GarNet&#8217;s technical documentation!</a></li>
+<li><a class="reference internal" href="#">GarNet 0.5.0</a></li>
 </ul>
 </div>
             
@@ -135,7 +135,7 @@
     
       <li><a href="#">Docs</a> &raquo;</li>
         
-      <li>Welcome to GarNet&#8217;s technical documentation!</li>
+      <li>GarNet 0.5.0</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -154,35 +154,63 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="welcome-to-garnet-s-technical-documentation">
-<h1>Welcome to GarNet&#8217;s technical documentation!<a class="headerlink" href="#welcome-to-garnet-s-technical-documentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="garnet-0-5-0">
+<h1>GarNet 0.5.0<a class="headerlink" href="#garnet-0-5-0" title="Permalink to this headline">¶</a></h1>
 <p>GarNet is an epigenomics data exploration tool. For more information about the scientific uses of GarNet,
 please see the <a class="reference external" href="https://github.com/fraenkel-lab/GarNet">Readme</a>. To report an error, please refer to the <a class="reference external" href="https://github.com/fraenkel-lab/GarNet/issues">Issues</a>.</p>
 <p>Some important notes:</p>
 <ul class="simple">
-<li>GarNet mostly uses tab-delimited files, otherwise known as tsv&#8217;s. BED files are already tsv, so no worries there.</li>
 <li>In order to map peaks, a genome annotation file is required, processed into a &#8220;GarNet File&#8221;. There is such a file for hg19, mm9, and mm10.</li>
 </ul>
 <span class="target" id="module-garnet"></span><dl class="function">
-<dt id="garnet.map_peaks">
-<code class="descclassname">garnet.</code><code class="descname">map_peaks</code><span class="sig-paren">(</span><em>peaks_file_or_list_of_peaks_files</em>, <em>garnet_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find motifs and associated genes local to peaks.</p>
-<p>This function searches for motifs &#8220;under&#8221; peaks from an epigenomics dataset and &#8220;around&#8221; peaks for genes.
-It then returns all pairs of motifs and genes which were found local to peaks.</p>
+<dt id="garnet.construct_garnet_file">
+<code class="descclassname">garnet.</code><code class="descname">construct_garnet_file</code><span class="sig-paren">(</span><em>reference_file</em>, <em>motif_file_or_files</em>, <em>output_file</em>, <em>options={}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#construct_garnet_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.construct_garnet_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct the GarNet file by searching for any motifs that are within
+a certain window of a reference TSS. Generate a dataframe with these assocations,
+as well as the distance between the motif and gene TSS. Write the dataframe
+to the specified output file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>garnet_file</strong> (<em>str</em>) &#8211; filepath to the garnet file.</li>
-<li><strong>peaks_file_or_list_of_peaks_files</strong> (<em>str</em><em> or </em><em>list</em>) &#8211; filepath of the peaks file, or list of such paths</li>
+<li><strong>reference_file</strong> (<em>str</em>) &#8211; path to the reference gene BED file</li>
+<li><strong>motifs_file</strong> (<em>str</em>) &#8211; path to the motifs BED file</li>
+<li><strong>output_file</strong> (<em>str</em>) &#8211; ouput GarNet file path</li>
+<li><strong>options</strong> (<em>dict</em>) &#8211; currently not used</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a dataframe with rows of transcription factor binding motifs and nearby genes with the restriction that these motifs and genes must have been found near a peak.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">motif-gene associations and distance between the two.</p>
 </td>
 </tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pd.dataframe</p>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pd.DataFrame</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="garnet.map_peaks">
+<code class="descclassname">garnet.</code><code class="descname">map_peaks</code><span class="sig-paren">(</span><em>peaks_filepath_or_list_of_peaks_filepaths</em>, <em>garnet_filepath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garnet.html#map_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#garnet.map_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find motifs and associated genes local to peaks.</p>
+<p>This function intersects peaks from an epigenomics dataset with TF motifs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>peaks_filepath_or_list_of_peaks_filepaths</strong> (<em>str</em><em> or </em><em>list</em>) &#8211; filepath of the peaks file, or list of such paths</li>
+<li><strong>garnet_filepath</strong> (<em>str</em>) &#8211; filepath to the garnet file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">a dataframe with rows of transcription factor binding motifs and nearby genes with
+the restriction that these motifs and genes must have been found near a peak.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pd.DataFrame</p>
 </td>
 </tr>
 </tbody>
