@@ -13,6 +13,7 @@ import subprocess
 import numpy as np
 import pandas as pd
 import matplotlib
+matplotlib.use('Agg') # This is a workaround if encountering tkinter import error
 import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols as linear_regression
 from statsmodels.graphics.regressionplots import abline_plot as plot_regression
