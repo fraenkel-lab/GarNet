@@ -7,7 +7,7 @@ Many biological labs commonly use RNA-seq or other high-throughput technologies 
 The goal of GarNet is to use gene expression and epigenetic data to impute transcription factors (TFs) that played an important role in a biological system. Transcription factors bind in open chromatin regions to specific DNA sequences called "motifs," and affect the expression levels of nearby genes.
 To determine which TFs were relevant to a biological system, users should supply epigenetic regions (peaks) of interest (i.e. open chromatin regions derived from ATAC-seq or DNase-seq on your cells or in a similar cell line) and differential gene expression data. GarNet:
 
-1. Looks for known TF motifs (derived from [MotifMap](http://motifmap-rna.ics.uci.edu/)) that occur within your epigenetic regions.
+1. Looks for known TF motifs (derived from [cisBP](http://cisbp.ccbr.utoronto.ca/)) that occur within your epigenetic regions.
 ![map TFs to peaks](docs/figures/Picture1.png)
 2. Looks for known genes (derived from [RefSeq](https://www.ncbi.nlm.nih.gov/refseq/)) that occur near your epigenetic regions.
 ![map genes to peaks](docs/figures/Picture2.png)
@@ -21,7 +21,7 @@ If a Transcription Factor binding motif is found near genes changing in expressi
 
 ## Setup
 
-GarNet now uses BedTools for genomic intersection calculations. BedTools installation instructioncs available [here](http://bedtools.readthedocs.io/en/latest/content/installation.html). For mac users, we recommend:
+GarNet now uses BedTools for genomic intersection calculations. BedTools installation instructions available [here](http://bedtools.readthedocs.io/en/latest/content/installation.html). For mac users, we recommend:
 ```
 brew tap homebrew/science
 brew install bedtools
@@ -52,4 +52,4 @@ This repository is an updated version of Garnet, originally written by [Sara Gos
 
 This repository depends heavily on [pandas](http://pandas.pydata.org/) and pybedtools.
 
-We're very thankful for access to [MotifMap](http://motifmap-rna.ics.uci.edu/) and [RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) for our motif and genome data, upon which our analyses depend.
+We're very thankful for access to [cisBP](http://cisbp.ccbr.utoronto.ca/) and [RefSeq](https://www.ncbi.nlm.nih.gov/refseq/) for our motif and genome data, upon which our analyses depend.
