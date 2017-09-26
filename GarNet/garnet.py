@@ -13,6 +13,7 @@ import subprocess
 import numpy as np
 import pandas as pd
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols as linear_regression
 from statsmodels.graphics.regressionplots import abline_plot as plot_regression
@@ -146,6 +147,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 
 	# Add distance-corrected score
 	motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels.apply(distance_exp_decay, axis=1)
+	motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels['motifLODScore'].astype(float)
 
 	# Deal with duplicate gene-motif pairs
 	# keep the closest motif to gene in the case of duplicates
@@ -276,7 +278,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	# Function that searches for all motifs within a window of 10kb from any gene in the
 	# reference TSS file, and returns a dataframe.
 	# TODO: window size should be generated via the options parameter.
-	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
+	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=2000) \
 	                                                     .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand",
 	                                                                          "motifChrom", "motifStart", "motifEnd", "motifName", "motifLODScore", "motifStrand"])
 
