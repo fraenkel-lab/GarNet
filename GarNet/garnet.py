@@ -62,7 +62,9 @@ def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe
 	"""
 
 	if isinstance(motifs_and_genes_file_or_dataframe, str):
-		motifs_and_genes_dataframe = pd.read_csv(motifs_and_genes_file_or_dataframe, delimiter='\t', header=0, index_col=False)
+		motifs_and_genes_dataframe = pd.read_csv(motifs_and_genes_file_or_dataframe, delimiter='\t', 
+			names=["chrom", "start", "end", "motifName", "motifLODScore", "motifStrand", "geneName", "geneStart", "geneEnd", "motif_gene_distance"], 
+			index_col=False)
 
 	elif isinstance(motifs_and_genes_file_or_dataframe, pd.DataFrame):
 		motifs_and_genes_dataframe = motifs_and_genes_file_or_dataframe
@@ -74,7 +76,7 @@ def _parse_motifs_and_genes_file_or_dataframe(motifs_and_genes_file_or_dataframe
 
 ######################################## Scoring Functions #######################################
 
-def distance_exp_decay(row, decay_distance=10000): 
+def distance_exp_decay(row, decay_distance=2000): 
 	"""
 	Weight motif LOD scores by distance to TSS. Closer genes are exponentially higher weighted. 
 	"""
@@ -146,8 +148,10 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 	motifs_genes_and_expression_levels = motifs_and_genes_dataframe.merge(expression_dataframe, left_on='geneName', right_on='name', how='inner')
 
 	# Add distance-corrected score
+
 	motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels.apply(distance_exp_decay, axis=1)
-	motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels['motifLODScore'].astype(float)
+	# motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels['motifLODScore'] # no decay
+	motifs_genes_and_expression_levels = motifs_genes_and_expression_levels[(motifs_genes_and_expression_levels["motif_gene_distance"] > -1500) & (motifs_genes_and_expression_levels["motif_gene_distance"] < 500)]
 
 	# Deal with duplicate gene-motif pairs
 	# keep the closest motif to gene in the case of duplicates
