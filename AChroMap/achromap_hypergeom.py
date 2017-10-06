@@ -8,8 +8,14 @@ from scipy.stats import hypergeom
 from statsmodels.stats.multitest import multipletests
 
 
-binned_peaks = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.diffPeaks.2kb_window.100bp_bins.tsv"
-binned_motifs = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.binned_TFs.2kb_window.100bp_bins.tsv"
+
+
+# binned_peaks = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.diffPeaks.2kb_window.100bp_bins.tsv"
+# binned_motifs = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.binned_TFs.2kb_window.100bp_bins.tsv"
+
+
+binned_peaks = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/no_DEG_filter/ALS_CTR.diffPeaks.2kb_window.100bp_bins.tsv"
+binned_motifs = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/no_DEG_filter/ALS_CTR.binned_TFs.2kb_window.100bp_bins.tsv"
 
 
 
@@ -43,7 +49,7 @@ def main():
 	results_df["FDR"] = multipletests(results_df["p-value"])[1]
 	results_df.sort_values(by="FDR", ascending=True, inplace=True)
 	results_df = results_df[["TF_name", "p-value", "FDR", "total_bins", "open_bins", "motifs_bins", "motifs-open_bins"]]
-	results_df.to_csv("/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/results_motif_enrichment_in_open_chromatin.tsv", sep='\t', index=False)
+	results_df.to_csv("/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/no_DEG_filter/results_motif_enrichment_in_open_chromatin.tsv", sep='\t', index=False)
 
 
 
