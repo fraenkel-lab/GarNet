@@ -17,6 +17,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from statsmodels.formula.api import ols as linear_regression
 from statsmodels.graphics.regressionplots import abline_plot as plot_regression
+from statsmodels.stats.multitest import multipletests
 
 # Peripheral python external libraries
 from pybedtools import BedTool
@@ -151,7 +152,7 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 
 	motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels.apply(distance_exp_decay, axis=1)
 	# motifs_genes_and_expression_levels["motifTFAScore"] = motifs_genes_and_expression_levels['motifLODScore'] # no decay
-	motifs_genes_and_expression_levels = motifs_genes_and_expression_levels[(motifs_genes_and_expression_levels["motif_gene_distance"] > -1500) & (motifs_genes_and_expression_levels["motif_gene_distance"] < 500)]
+	# motifs_genes_and_expression_levels = motifs_genes_and_expression_levels[(motifs_genes_and_expression_levels["motif_gene_distance"] > -1500) & (motifs_genes_and_expression_levels["motif_gene_distance"] < 500)]
 
 	# Deal with duplicate gene-motif pairs
 	# keep the closest motif to gene in the case of duplicates
@@ -198,7 +199,9 @@ def TF_regression(motifs_and_genes_file_or_dataframe, expression_file, TFA_model
 		# TODO: implement FDR calculation
 		imputed_TF_features.append((TF_name, result.params['motifTFAScore'], result.pvalues['motifTFAScore'], ','.join(expression_profile['geneName'].tolist())))
 
-	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"]).sort_values("P-Value")
+	imputed_TF_features_dataframe = pd.DataFrame(imputed_TF_features, columns=["Transcription Factor", "Slope", "P-Value", "Targets"])
+	imputed_TF_features_dataframe["FDR"] = multipletests(imputed_TF_features_dataframe["P-Value"])[1]
+	imputed_TF_features_dataframe.sort_values("FDR")
 
 	# If we're supplied with an output_dir, we'll put a summary html file in there as well.
 	if output_dir:
