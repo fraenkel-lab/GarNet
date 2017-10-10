@@ -46,7 +46,7 @@ def main():
 
 
 	results_df = pd.DataFrame(results, columns=["TF_name", "p-value", "total_bins", "open_bins", "motifs_bins", "motifs-open_bins"])
-	results_df["FDR"] = multipletests(results_df["p-value"])[1]
+	results_df["FDR"] = multipletests(results_df["p-value"], method='b')[1]
 	results_df.sort_values(by="FDR", ascending=True, inplace=True)
 	results_df = results_df[["TF_name", "p-value", "FDR", "total_bins", "open_bins", "motifs_bins", "motifs-open_bins"]]
 	results_df.to_csv("/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/results.2kb_window.100bp_bins.tsv", sep='\t', index=False)
