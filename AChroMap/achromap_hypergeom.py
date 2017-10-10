@@ -14,8 +14,8 @@ from statsmodels.stats.multitest import multipletests
 # binned_motifs = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.binned_TFs.2kb_window.100bp_bins.tsv"
 
 
-binned_peaks = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/no_DEG_filter/ALS_CTR.diffPeaks.2kb_window.100bp_bins.tsv"
-binned_motifs = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/no_DEG_filter/ALS_CTR.binned_TFs.2kb_window.100bp_bins.tsv"
+binned_peaks = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.diffPeaks.2kb_window.100bp_bins.tsv"
+binned_motifs = "/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/ALS_CTR.binned_TFs.2kb_window.100bp_bins.tsv"
 
 
 
@@ -40,7 +40,7 @@ def main():
 
 		# For efficiency, calculate probability of seeing fewer than n_positives
 		rv = hypergeom(N, N_good, n_samples)
-		p_val = 1 - sum(rv.pmf(np.arange(0,n_positives)))
+		p_val = sum(rv.pmf(np.arange(n_positives, n_samples+1)))
 
 		results.append([TF, p_val, N, N_good, n_samples, n_positives])
 
@@ -49,7 +49,7 @@ def main():
 	results_df["FDR"] = multipletests(results_df["p-value"])[1]
 	results_df.sort_values(by="FDR", ascending=True, inplace=True)
 	results_df = results_df[["TF_name", "p-value", "FDR", "total_bins", "open_bins", "motifs_bins", "motifs-open_bins"]]
-	results_df.to_csv("/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/no_DEG_filter/results_motif_enrichment_in_open_chromatin.tsv", sep='\t', index=False)
+	results_df.to_csv("/nfs/latdata/iamjli/ALS/network_analysis/iMNs_ALS_CTR_20171004/TF_prediction/results.2kb_window.100bp_bins.tsv", sep='\t', index=False)
 
 
 
