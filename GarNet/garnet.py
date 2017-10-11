@@ -236,7 +236,7 @@ def tss_from_bed(bed_file):
 	return output_file
 
 
-def construct_garnet_file(reference_file, motif_file_or_files, output_file, options=dict()):
+def construct_garnet_file(reference_file, motif_file_or_files, output_file, window_size=2000):
 	"""
 	Construct the GarNet file by searching for any motifs that are within
 	a certain window of a reference TSS. Generate a dataframe with these assocations,
@@ -247,7 +247,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 		reference_file (str): path to the reference gene BED file
 		motifs_file (str): path to the motifs BED file
 		output_file (str): ouput GarNet file path
-		options (dict): currently not used
+		window_size (int): the size of the window
 
 	Returns:
 		pd.DataFrame: motif-gene associations and distance between the two.
@@ -265,7 +265,7 @@ def construct_garnet_file(reference_file, motif_file_or_files, output_file, opti
 	# Function that searches for all motifs within a window of 10kb from any gene in the
 	# reference TSS file, and returns a dataframe.
 	# TODO: window size should be generated via the options parameter.
-	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=10000) \
+	get_motif_genes_df = lambda motif_file: reference_tss.window(motif_file, w=window_size) \
 	                                                     .to_dataframe(names=["tssChrom", "tssStart", "tssEnd", "geneName", "tssScore", "tssStrand",
 	                                                                          "motifChrom", "motifStart", "motifEnd", "motifName", "motifScore", "motifStrand"])
 
