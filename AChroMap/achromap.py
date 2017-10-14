@@ -75,8 +75,8 @@ def hypergeometric_cdf(N, N_pos, n, n_pos):
 
 	# P-value does not change for large N, so we scale N to avoid floating point errors. 
 	if N > 100000:
-		N = 100000
 		N_pos = N_pos/N*100000
+		N = 100000
 
 	rv = hypergeom(N, N_pos, n)
 	p_val = sum(rv.pmf(np.arange(n_pos, n+1)))
@@ -101,7 +101,6 @@ def TF_enrichment(TF, motif_df, DOS_df):
 def main():
 
 	args = parser.parse_args()
-	print(args)
 
 	TSS_file = "../motif_matches/reference/ucsc_reference.{}.tss.bed".format(args.genome)
 	genome_size_file = "../motif_matches/genomes/{}.chrom.sizes".format(args.genome)
