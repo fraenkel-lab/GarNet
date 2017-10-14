@@ -42,9 +42,9 @@ def directory(dirname):
 io_params = parser.add_argument_group("Input / Output Files")
 
 io_params.add_argument("-g", "--DEG", dest='DEG_file', type=str, required=True,
-	help ='(Required) ')
+	help ='(Required) File path to differentially expressed genes separated by line. Will ignore any columns but the first.')
 io_params.add_argument("-s", "--DOS", dest='DOS_file', type=str, required=True,
-	help ='(Required) ')
+	help ='(Required) File path to differentially open peaks with 3 columns: "chrom\tstart\tend')
 io_params.add_argument('-o', '--output', dest='output_dir', action=FullPaths, type=directory, required=True,
 	help='(Required) Output directory path')
 
